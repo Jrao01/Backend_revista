@@ -1,0 +1,82 @@
+### Variables
+@baseUrl = http://localhost:3000/api
+@authToken = {{login.response.body.token}}
+
+### 1. Registrar Usuario
+POST {{baseUrl}}/usuarios/registro
+Content-Type: application/json
+
+{
+    "nombre": "Prueba",
+    "apellido": "Usuario",
+    "correo": "test@correo.com",
+    "password": "password123",
+    "orcid": "1234-5678-9012-3456",
+    "afiliacion_institucional": "UNERG",
+    "rol": "autor"
+}
+
+### 2. Login (Obtener Token)
+# @name login
+POST {{baseUrl}}/usuarios/login
+Content-Type: application/json
+
+{
+    "correo": "test@correo.com",
+    "password": "password123"
+}
+
+### 3. Obtener Perfil (Incluye artículos)
+GET {{baseUrl}}/usuarios/{{login.response.body.usuario.id}}
+Authorization: Bearer {{authToken}}
+
+### 4. Crear Área
+# @name crearArea
+POST {{baseUrl}}/areas
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "nombre": "Ciencias de la Salud",
+    "color_institucional": "#3366ff"
+}
+
+### 5. Crear Programa
+# @name crearPrograma
+POST {{baseUrl}}/programas
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "nombre": "Odontología",
+    "area_id": {{crearArea.response.body.area.id}}
+}
+
+### 6. Crear Línea de Investigación
+POST {{baseUrl}}/lineas
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "nombre": "Salud Bucal",
+    "area_id": {{crearArea.response.body.area.id}},
+    "tipo": "Matriz"
+}
+
+### 7. Ver Artículos (General)
+GET {{baseUrl}}/articulos
+Authorization: Bearer {{authToken}}
+
+### 8. Ver Detalle de Artículo Específico
+GET {{baseUrl}}/articulos/1
+Authorization: Bearer {{authToken}}
+
+### 9. Editar Artículo
+PUT {{baseUrl}}/articulos/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "titulo_es": "Nuevo Título Editado",
+    "resumen_es": "Este es un nuevo resumen actualizado para la prueba."
+}
