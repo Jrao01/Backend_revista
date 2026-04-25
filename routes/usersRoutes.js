@@ -15,8 +15,10 @@ router.post('/login', loginUsuario);
 router.post('/registro', crearUsuario);
 
 // Rutas protegidas (requieren token)
-router.get('/', checkAuth, obtenerUsuarios);
-router.get('/:id', checkAuth, obtenerUsuario);
-router.put('/:id', checkAuth, actualizarUsuario);
+router.get('/', (req, res) => {
+    res.json("activo");
+});
+router.get('/:id', obtenerUsuario);
+router.put('/:id', actualizarUsuario);
 
 export default router;

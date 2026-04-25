@@ -7,8 +7,8 @@
     "type": "module",
     "main": "index.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
         "dev": "nodemon index.js",
+        "getskills": "npx autoskills",
         "start": "node index.js"
     },
     "dependencies": {
@@ -25,5 +25,8 @@
         "nodemailer": "^8.0.6",
         "sequelize": "^6.37.8",
         "sqlite3": "^6.0.1"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.14"
     }
 }

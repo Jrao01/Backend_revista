@@ -1,9 +1,9 @@
-import express, {
-    urlencoded
-} from "express";
+import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
+import fs from "fs";
+import path from "path";
 import db from "./config/conexion.js";
 import "./models/index.js";
 
@@ -15,20 +15,28 @@ import programasRoutes from "./routes/programasRoutes.js";
 import lineasRoutes from "./routes/lineasRoutes.js";
 import revistaRoutes from "./routes/revistaRoutes.js";
 
+// Configurar variables de entorno
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-//Middlewares
+// Middlewares
 app.use(express.json());
 app.use(cors());
 app.use(morgan("dev"));
-app.use(urlencoded({
+app.use(express.urlencoded({
     extended: true
 }));
 
-// Servir la carpeta uploads como estática para poder acceder a los archivos desde el navegador
+// Crear carpeta uploads si no existe
+const uploadsDir = './uploads';
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir);
+    console.log('Carpeta "uploads" creada correctamente');
+}
+
+// Servir la carpeta uploads como estática
 app.use('/uploads', express.static('uploads'));
 
 // Rutas de la API
@@ -39,10 +47,36 @@ app.use('/api/programas', programasRoutes);
 app.use('/api/lineas', lineasRoutes);
 app.use('/api/revistas', revistaRoutes);
 
-db.sync({ force: false })
-    .then(() => {
-        app.listen(port, () => {
-            console.log(`Servidor corriendo en el puerto ${port}`);
+// Función de arranque del servidor
+const startServer = async () => {
+    try {
+        console.log('Conectando a la base de datos');
+        await db.authenticate();
+
+        console.log('Sincronizando modelos');
+        await db.sync({
+            force: false
         });
-    })
-    .catch(err => console.log("Error al sincronizar la base de datos:", err));
+
+        const server = app.listen(port, () => {
+            console.log(`SERVIDOR ACTIVO EN PUERTO: ${port}`);
+            console.log(`URL: http://localhost:${port}`);
+        });
+
+        // Manejo de errores del servidor
+        server.on('error', (error) => {
+            if (error.code === 'EADDRINUSE') {
+                console.error(`El puerto ${port} ya está en uso.`);
+            } else {
+                console.error('Error en el servidor:', error);
+            }
+            process.exit(1);
+        });
+
+    } catch (error) {
+        console.error('Fallo crítico al iniciar el servidor:', error);
+        process.exit(1);
+    }
+};
+
+startServer();
