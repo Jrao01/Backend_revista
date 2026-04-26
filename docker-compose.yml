@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: revista_backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - sqlite_data:/app
+    environment:
+      - NODE_ENV=development
+      - JWT_SECRET=supersecreto
+    restart: always
+
+volumes:
+  sqlite_data:
