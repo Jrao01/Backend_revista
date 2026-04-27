@@ -1,5 +1,5 @@
 import express from 'express';
-import { postArticle, postArchive, getArticleById, updateArticle } from '../controllers/articuloControllers.js';
+import { postArticle, postArchive, getArticleById, updateArticle, getArticulos } from '../controllers/articuloControllers.js';
 import upload from '../middlewares/uploadMiddleware.js';
 import checkAuth from '../middlewares/authMiddleware.js';
 
@@ -23,5 +23,8 @@ router.get('/:id', checkAuth, getArticleById);
 
 // Actualizar los datos de un artículo
 router.put('/:id', checkAuth, updateArticle);
+
+// Listar todos los artículos
+router.get('/', checkAuth, getArticulos);
 
 export default router;

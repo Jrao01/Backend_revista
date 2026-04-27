@@ -14,7 +14,6 @@ const router = express.Router();
 router.post('/login', loginUsuario);
 router.post('/registro', crearUsuario);
 
-// Rutas protegidas (requieren token)
 router.get('/', (req, res) => {
     res.json("activo");
 });
