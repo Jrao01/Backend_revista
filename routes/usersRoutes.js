@@ -4,9 +4,11 @@ import {
     obtenerUsuario,
     actualizarUsuario,
     crearUsuario,
-    loginUsuario
+    loginUsuario,
+    crearUsuarioAdmin
 } from '../controllers/usersControllers.js';
 import checkAuth from '../middlewares/authMiddleware.js';
+import upload from '../middlewares/uploadMiddleware.js';
 
 const router = express.Router();
 
@@ -14,7 +16,9 @@ const router = express.Router();
 router.post('/login', loginUsuario);
 router.post('/registro', crearUsuario);
 
-// Rutas protegidas (requieren token)
+router.get('/todos', checkAuth, obtenerUsuarios);
+router.post('/crear-admin', checkAuth, upload.single('cv'), crearUsuarioAdmin);
+
 router.get('/', (req, res) => {
     res.json("activo");
 });
