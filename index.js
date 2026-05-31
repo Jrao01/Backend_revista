@@ -47,6 +47,15 @@ app.use('/api/programas', programasRoutes);
 app.use('/api/lineas', lineasRoutes);
 app.use('/api/revistas', revistaRoutes);
 
+// Error handling for malformed JSON bodies
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    console.error('JSON parse error:', err.message);
+    return res.status(400).json({ message: 'Invalid JSON payload' });
+  }
+  next();
+});
+
 // Función de arranque del servidor
 const startServer = async () => {
     try {
@@ -55,7 +64,7 @@ const startServer = async () => {
 
         console.log('Sincronizando modelos');
         await db.sync({
-            force: false
+            alter: true
         });
 
         const server = app.listen(port, () => {

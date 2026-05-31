@@ -16,7 +16,9 @@ export const postArticle = async (req, res) => {
             resumen_es,
             resumen_en,
             palabras_clave,
-            es_anonimo
+            es_anonimo,
+            firma_originalidad,
+            firma_etica
         } = req.body;
 
         // Determinar el autor principal: del body o del usuario logueado
@@ -27,6 +29,9 @@ export const postArticle = async (req, res) => {
                 message: "Falta proporcionar el ID del autor principal"
             });
         }
+
+        const firmaOriginalidad = firma_originalidad === 'true' || firma_originalidad === true;
+        const firmaEtica = firma_etica === 'true' || firma_etica === true;
 
         // Crear el registro del artículo
         const articulo = await Articulo.create({
@@ -39,6 +44,8 @@ export const postArticle = async (req, res) => {
             resumen_es,
             resumen_en,
             palabras_clave,
+            firma_originalidad: firmaOriginalidad,
+            firma_etica: firmaEtica,
             fecha_recepcion: new Date(),
         });
 
@@ -50,7 +57,6 @@ export const postArticle = async (req, res) => {
             const archivosPermitidos = [
                 'manuscrito_original',
                 'pagina_titulo',
-                'carta_originalidad',
                 'ficha_autores',
                 'material_suplementario'
             ];
@@ -215,5 +221,50 @@ export const getArticulos = async (req, res) => {
             message: "Error al obtener los artículos",
             error: error.message
         });
+    }
+};
+
+export const getArticulosAprobados = async (req, res) => {
+    try {
+        const { revistaId } = req.query;
+        const whereClause = { status: 'aprobado' };
+        if (revistaId) {
+            whereClause.revista_id = parseInt(revistaId);
+        }
+        const articulos = await Articulo.findAll({
+            where: whereClause,
+            include: [{
+                model: ArchivoArticulo
+            }]
+        });
+        res.json(articulos);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Error al obtener artículos aprobados",
+            error: error.message
+        });
+    }
+};
+
+// New endpoint to assign an approved article to a specific número (which includes volumen)
+export const assignArticle = async (req, res) => {
+    try {
+        const { id } = req.params; // article id
+        const { numero_id } = req.body; // the NumeroRevista id to assign
+        if (!numero_id) {
+            return res.status(400).json({ message: 'numero_id is required' });
+        }
+        const articulo = await Articulo.findByPk(id);
+        if (!articulo) {
+            return res.status(404).json({ message: 'Artículo no encontrado' });
+        }
+        // Update the foreign key
+        articulo.numero_id = numero_id;
+        await articulo.save();
+        res.json({ message: 'Artículo asignado correctamente', articulo });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'Error al asignar artículo', error: error.message });
     }
 };

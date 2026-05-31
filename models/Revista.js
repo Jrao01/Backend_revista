@@ -22,6 +22,14 @@ const Revista = db.define('revistas', {
     },
     descripcion: {
         type: DataTypes.STRING
+    },
+    activo: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
+    },
+    lineas_permitidas: {
+        type: DataTypes.JSON,
+        allowNull: true
     }
 }, {
     timestamps: false,

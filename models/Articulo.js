@@ -9,6 +9,10 @@ const Articulo = db.define('articulos', {
         primaryKey: true,
         autoIncrement: true
     },
+    img: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     revista_id: {
         type: DataTypes.INTEGER,
         allowNull: false
@@ -44,6 +48,16 @@ const Articulo = db.define('articulos', {
     },
     palabras_clave: {
         type: DataTypes.STRING
+    },
+    firma_originalidad: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+    },
+    firma_etica: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
     },
     doi: {
         type: DataTypes.STRING,
