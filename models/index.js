@@ -9,20 +9,25 @@ import ArchivoArticulo from './ArchivoArticulo.js';
 import Evaluacion from './Evaluacion.js';
 import NumeroRevista from './NumeroRevista.js';
 
-// areas.id < programas.area_id
-Area.hasMany(Programa, {
-    foreignKey: 'area_id'
+// programas.id < areas.programa_id
+Programa.hasMany(Area, {
+    foreignKey: 'programa_id',
+    as: 'areas'
 });
-Programa.belongsTo(Area, {
-    foreignKey: 'area_id'
+
+Area.belongsTo(Programa, {
+    foreignKey: 'programa_id',
+    as: 'programa'
 });
 
 // areas.id < lineas_investigacion.area_id
 Area.hasMany(LineaInvestigacion, {
-    foreignKey: 'area_id'
+    foreignKey: 'area_id',
+    as: 'lineas'
 });
 LineaInvestigacion.belongsTo(Area, {
-    foreignKey: 'area_id'
+    foreignKey: 'area_id',
+    as: 'area'
 });
 
 // programas.id < articulos.programa_id

@@ -9,11 +9,9 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-      - sqlite_data:/app
     environment:
+      # Variables de entorno del backend
       - NODE_ENV=development
-      - JWT_SECRET=supersecreto
+      - PORT=3000
+      - JWT_SECRET=supersecreto_revista_cientifica
     restart: always
-
-volumes:
-  sqlite_data:

@@ -9,7 +9,9 @@
     "scripts": {
         "dev": "nodemon index.js",
         "getskills": "npx autoskills",
-        "start": "node index.js"
+        "start": "node index.js",
+        "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+        "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
     },
     "dependencies": {
         "axios": "^1.15.2",
@@ -17,6 +19,7 @@
         "cors": "^2.8.6",
         "dotenv": "^17.4.2",
         "express": "^5.2.1",
+        "express-validator": "^7.3.2",
         "form-data": "^4.0.5",
         "jsonwebtoken": "^9.0.3",
         "logger": "^0.0.1",
@@ -27,6 +30,8 @@
         "sqlite3": "^6.0.1"
     },
     "devDependencies": {
-        "nodemon": "^3.1.14"
+        "jest": "^30.4.2",
+        "nodemon": "^3.1.14",
+        "supertest": "^7.2.2"
     }
 }
