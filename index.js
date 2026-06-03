@@ -14,6 +14,7 @@ import areasRoutes from "./routes/areasRoutes.js";
 import programasRoutes from "./routes/programasRoutes.js";
 import lineasRoutes from "./routes/lineasRoutes.js";
 import revistaRoutes from "./routes/revistaRoutes.js";
+import editorRoutes from './routes/editorRoutes.js';
 
 // Configurar variables de entorno
 dotenv.config();
@@ -40,12 +41,28 @@ if (!fs.existsSync(uploadsDir)) {
 app.use('/uploads', express.static('uploads'));
 
 // Rutas de la API
-app.use('/api/usuarios', usersRoutes);
-app.use('/api/articulos', articuloRoutes);
-app.use('/api/areas', areasRoutes);
-app.use('/api/programas', programasRoutes);
-app.use('/api/lineas', lineasRoutes);
-app.use('/api/revistas', revistaRoutes);
+app.use("/api/usuarios", usersRoutes);
+app.use("/api/articulos", articuloRoutes);
+app.use("/api/areas", areasRoutes);
+app.use("/api/programas", programasRoutes);
+app.use("/api/lineas", lineasRoutes);
+app.use("/api/revistas", revistaRoutes);
+app.use('/api/editor', editorRoutes);
+
+// Error handling para JSON mal formado
+app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+        console.error("JSON parse error:", err.message);
+
+        return res.status(400).json({
+            ok: false,
+            message: "JSON inválido en el cuerpo de la solicitud",
+            errors: err.message
+        });
+    }
+
+    next();
+});
 
 // Función de arranque del servidor
 const startServer = async () => {

@@ -92,6 +92,50 @@ async function test() {
         const articleId = articleRes.data.articulo.id;
         console.log('Artículo registrado con ID:', articleId);
 
+        // =================================================================
+        // ⚖️ SECCIÓN FLUJO DEL EDITOR
+        // =================================================================
+        console.log('\n--- ⚖️ Ejecutando Módulo del Editor ---');
+
+        // A. Prueba de Desk Review / Control de Plagio (Pasa con éxito)
+        console.log('A. Enviando informe de control de plagio (Desk Review)...');
+        const resDeskReview = await axios.put(
+            `${API_URL}/editor/${articleId}/desk-review`,
+            { porcentaje_plagio: 14 }, // Menor a 30% para avanzar
+            { headers: headersEditor }
+        );
+        console.log('   [Resultado]:', resDeskReview.data.message);
+
+        // B. Prueba de Anonimización de Manuscrito (Subida del PDF anonimizado)
+        console.log('B. Cargando manuscrito_anonimizado para arbitraje doble ciego...');
+        const formAnonimo = new FormData();
+        // Usamos el archivo 'manuscrito.docx' o 'pagina_titulo.pdf' que ya existe en la carpeta archivos
+        const filePathAnonimo = path.join(process.cwd(), 'tests', 'archivos', 'pagina_titulo.pdf');
+        formAnonimo.append('manuscrito_anonimo', fs.createReadStream(filePathAnonimo));
+
+        const resAnonimizar = await axios.put(
+            `${API_URL}/editor/${articleId}/anonimizar`,
+            formAnonimo,
+            {
+                headers: {
+                    ...headersEditor,
+                    ...formAnonimo.getHeaders()
+                }
+            }
+        );
+        console.log('   [Resultado]:', resAnonimizar.data.message);
+
+        // C. Prueba de Asignación de Jurados Ciegos a la tabla Evaluaciones
+        console.log('C. Vinculando evaluadores a la tabla de evaluaciones...');
+        const resAsignarJurados = await axios.post(
+            `${API_URL}/editor/${articleId}/asignar-jurados`,
+            { juradosIds: [juradoId] }, // Pasa el arreglo con el ID creado
+            { headers: headersEditor }
+        );
+        console.log('   [Resultado]:', resAsignarJurados.data.message);
+        console.log('--- ⚖️ Módulo de Mark Validado Exitosamente en el Flujo Completo ---\n');
+        // =================================================================
+
         // 5. Consultar Artículo
         console.log('\n5. Consultando detalle del artículo...');
         const detailRes = await axios.get(`${API_URL}/articulos/${articleId}`, { headers });
