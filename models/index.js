@@ -72,12 +72,14 @@ NumeroRevista.belongsTo(Revista, {
     foreignKey: 'revista_id'
 });
 
-// numeros_revista.id < articulos.numero_id
+// numeros_revista.id < articulos.numero_revista_id
 NumeroRevista.hasMany(Articulo, {
-    foreignKey: 'numero_id'
+    foreignKey: 'numero_revista_id',
+    as: 'articulos'
 });
 Articulo.belongsTo(NumeroRevista, {
-    foreignKey: 'numero_id'
+    foreignKey: 'numero_revista_id',
+    as: 'numero_revista'
 });
 
 // articulos.id < autores_secundarios.articulo_id

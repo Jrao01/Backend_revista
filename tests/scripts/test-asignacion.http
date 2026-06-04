@@ -1,0 +1,53 @@
+### Variables (Dixon - asignación de artículos)
+@baseUrl = http://localhost:3000/api
+@authToken = {{login.response.body.token}}
+
+### 1. Login editor (crea el usuario antes si no existe)
+# @name login
+POST {{baseUrl}}/usuarios/login
+Content-Type: application/json
+
+{
+    "correo": "editor@test.com",
+    "password": "password123"
+}
+
+### 2. Crear revista
+# @name crearRevista
+POST {{baseUrl}}/revistas
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "nombre": "Revista Prueba",
+    "issn": "1234-5678",
+    "periodicidad": "semestral",
+    "descripcion": "Prueba Dixon"
+}
+
+### 3. Crear número (volumen 12, número 1)
+# @name crearNumero
+POST {{baseUrl}}/revistas/{{crearRevista.response.body.revista.id}}/numeros
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "volumen": 12,
+    "numero": 1,
+    "anio": 2026,
+    "titulo_edicion": "Enero-Junio",
+    "status": "futuro"
+}
+
+### 4. Asignar artículo al número (cambia articulo_id por uno real aprobado)
+POST {{baseUrl}}/revistas/{{crearRevista.response.body.revista.id}}/volumenes/12/numeros/{{crearNumero.response.body.numero.id}}/articulos
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "articulo_id": 1
+}
+
+### 5. Ver artículo con número asignado
+GET {{baseUrl}}/articulos/1
+Authorization: Bearer {{authToken}}
