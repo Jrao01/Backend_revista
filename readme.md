@@ -1,101 +1,127 @@
 #  Backend - Revista Científica UNERG
 
-Este repositorio contiene el backend para el sistema de gestión de revistas científicas de la **Universidad Nacional Experimental de los Llanos Rómulo Gallegos (UNERG)**. La plataforma está diseñada para automatizar y gestionar el ciclo de vida completo de un artículo científico, desde su recepción hasta su publicación final.
+Este repositorio contiene el backend para el sistema de gestión de revistas científicas de la **Universidad Nacional Experimental de los Llanos Rómulo Gallegos (UNERG)**. La plataforma automatiza el ciclo de vida de un artículo científico, desde su recepción hasta su publicación final.
 
 ---
 
 ## Tecnologías Utilizadas
 
-- **Entorno de Ejecución:** Node.js
+- **Entorno de Ejecución:** Node.js (v18+)
 - **Framework Web:** Express.js
-- **Base de Datos:** SQLite3 (para desarrollo local)
-- **ORM:** Sequelize
+- **Base de Datos:** SQLite3 (vía Sequelize ORM)
 - **Autenticación:** JSON Web Tokens (JWT) & Bcrypt
 - **Gestión de Archivos:** Multer
+- **Contenerización:** Docker & Docker Compose
 
 ---
 
-## Estado de Endpoints y Funcionalidad
+## Instalación y Encendido (Docker)
 
-| Módulo | Endpoint | Método | Funcionalidad | Estado |
-| :--- | :--- | :--- | :--- | :--- |
-| **Auth** | `/api/usuarios/registro` | `POST` | Registro de nuevos usuarios | ✅ Listo |
-| | `/api/usuarios/login` | `POST` | Login y obtención de JWT | ✅ Listo |
-| | `/api/usuarios/:id` | `GET` | Perfil + Artículos del autor | ✅ Listo |
-| **Academia** | `/api/areas`, `/api/programas`, `/api/lineas` | `GET/POST/PUT` | Gestión de estructura UNERG | ✅ Listo |
-| **Revistas** | `/api/revistas` | `GET/POST/PUT` | Gestión de cabeceras de revistas | ✅ Listo |
-| **Artículos** | `/api/articulos/registrar` | `POST` | Envío inicial con 5 archivos | ✅ Listo |
-| | `/api/articulos/:id` | `GET` | Detalle del artículo + Archivos | ✅ Listo |
-| | `/api/articulos/:id` | `PUT` | Edición de metadatos básicos | ✅ Listo |
+La forma más rápida de poner en marcha el proyecto es utilizando Docker.
 
-> [!NOTE]
-> Para ver el detalle completo de los requerimientos funcionales y reglas de negocio por perfil, consulta el archivo [requerimientos.md](./requerimientos.md).
-
----
-
-# Asignación de Tareas del Equipo
-
-### **Julian**
-
-*   creacion de Archivos de test de flujos completos para deteccion de errores temprana
-
-### **Ponce**
-*   **Dockerización (Tarea prioritaria):**
-    *   **Acción:** Crear el `Dockerfile` y `docker-compose.yml` para asegurar que el entorno de desarrollo sea idéntico para todo el equipo.
-*   **Módulo de Ediciones:** CRUD de `NumeroRevista` y vinculación de artículos.
-*   **Módulo de Colaboración:** Gestión de `AutorSecundario`.
-
-### **Mark**
-*   **Workflow Editorial:** Desk Review, informes de plagio y anonimización de manuscritos.
-*   **Arbitraje:** Lógica de asignación de jurados ciegos.
-
-### **Kelvin**
-*   **Módulo de Jurados:** Registro de evaluaciones y veredictos.
-*   **Producción:** Carga de galeradas finales (PDF/XML/HTML) y asignación de DOI.
-*   **Discusiones:** Panel de mensajería interna entre roles.
-
----
-
-## Instalación y Uso
-
-### 1. Clonar el repositorio
+### 1. Clonar y Entrar
 ```bash
 git clone https://github.com/Jrao01/Backend_revista.git
 cd backend
 ```
 
-### 2. Instalar dependencias
+### 2. Configurar Variables de Entorno
+Crea un archivo `.env` en la raíz del proyecto (o copia el `.env.example`):
 ```bash
-npm install
+PORT=3000
+JWT_SECRET=tu_secreto_super_seguro
 ```
 
-### 3. Iniciar el servidor
+### 3. Levantar con Docker Compose
 ```bash
-node index.js
+docker-compose up -d --build
 ```
-*El servidor corre en el puerto 3000 por defecto. La base de datos se encuentra en `config/database.sqlite`.*
+*El servidor estará disponible en `http://localhost:3000`.*
+
+#### Otros comandos de Docker:
+- **Apagar el servidor:** `docker-compose down`
+- **Reiniciar el servidor:** `docker-compose restart`
+- **Ver logs en tiempo real:** `docker-compose logs -f`
+
+---
+
+## Documentación de API (Endpoints)
+
+Todos los endpoints base son prefijados por `/api`. Las rutas protegidas requieren el header:  
+`Authorization: Bearer <TU_TOKEN_JWT>`
+
+### Autenticación y Usuarios (`/api/usuarios`)
+
+| Método | Ruta | Descripción | Parámetros (Body JSON) | Protegida |
+| :--- | :--- | :--- | :--- | :---: |
+| `POST` | `/registro` | Registro de usuario | `nombre`, `apellido`, `correo`, `password`, `rol`, `orcid`, `afiliacion_institucional` | No |
+| `POST` | `/login` | Inicio de sesión | `correo`, `password` | No |
+| `GET` | `/` | Estado del servicio | - | Sí |
+| `GET` | `/:id` | Ver perfil completo | - | Sí |
+| `PUT` | `/:id` | Actualizar datos | `nombre`, `apellido`, `correo`, `orcid`, `afiliacion_institucional` | Sí |
+
+---
+
+### Gestión de Artículos (`/api/articulos`)
+
+#### 1. Registro de Artículo (`POST /registrar`)
+Requiere `multipart/form-data`.
+
+**Campos de Formulario (Text):**
+- `revista_id`, `programa_id`, `linea_id`: IDs numéricos.
+- `titulo_es`, `titulo_en`: Títulos.
+- `resumen_es`, `resumen_en`: Resúmenes.
+- `palabras_clave`: String.
+- `es_anonimo`: "true" / "false".
+- `contenido_estructurado`: (Opcional) Objeto JSON con la estructura del artículo.
+
+**Archivos (File):**
+- `manuscrito_original` (Obligatorio), `pagina_titulo`, `carta_originalidad`, `ficha_autores`, `material_suplementario`.
+
+#### 2. Otros Endpoints de Artículos
+
+| Método | Ruta | Descripción | Parámetros |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/` | Listar todos los artículos | - |
+| `GET` | `/:id` | Detalle de un artículo | ID en URL. Incluye metadatos y lista de archivos. |
+| `PUT` | `/:id` | Editar metadatos | `titulo_es`, `resumen_es`, `linea_id`, `contenido_estructurado`, etc. |
+| `POST` | `/:id/archivos` | Subir archivo adicional | `archivo` (file), `tipo_archivo` (text), `version` (text). |
+
+---
+
+### Estructura Académica (`/api/areas`, `/api/programas`, `/api/lineas`)
+
+| Método | Ruta | Descripción | Body (JSON) |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/` | Listar elementos | - |
+| `POST` | `/` | Crear nuevo | **Áreas:** `nombre`, `color_institucional`. <br> **Prog:** `nombre`, `area_id`. <br> **Líneas:** `nombre`, `area_id`, `tipo`. |
+| `PUT` | `/:id` | Actualizar | Campos mencionados arriba según el módulo. |
+
+---
+
+### Gestión de Revistas (`/api/revistas`)
+
+| Método | Ruta | Descripción | Body (JSON) |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/` | Listar revistas | - |
+| `POST` | `/` | Crear revista | `nombre`, `issn`, `periodicidad` (semestral/anual), `descripcion`. |
+| `PUT` | `/:id` | Actualizar revista | `nombre`, `issn`, `periodicidad`, `descripcion`. |
 
 ---
 
 ## Pruebas (Testing)
 
-Para ejecutar el flujo completo de prueba (Registro -> Artículo -> Perfil):
+**Desde el contenedor Docker:**
 ```bash
-node tests/scripts/test_full_flow.js
+docker exec -it revista_backend node tests/scripts/test_full_flow.js
 ```
 
 ---
 
 ## Estructura del Proyecto
 
-```text
-backend/
-├── config/             # Configuración de DB y Variables
-├── controllers/        # Lógica de los endpoints
-├── middlewares/        # Middlewares de Auth y Uploads
-├── models/             # Modelos de Sequelize
-├── routes/             # Definición de rutas de la API
-├── tests/              # Scripts y archivos de prueba
-├── uploads/            # Archivos físicos subidos
-└── index.js            # Punto de entrada de la aplicación
-```
+- `controllers/`: Lógica de negocio (Sequelize queries).
+- `models/`: Definición de tablas y relaciones.
+- `routes/`: Definición de rutas Express.
+- `middlewares/`: JWT Auth y Multer (Uploads).
+- `uploads/`: Carpeta física de documentos (ignorada por Git).

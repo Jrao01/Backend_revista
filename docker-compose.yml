@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: revista_backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      # Variables de entorno del backend
+      - NODE_ENV=development
+      - PORT=3000
+      - JWT_SECRET=supersecreto_revista_cientifica
+    restart: always

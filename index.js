@@ -3,7 +3,6 @@ import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
 import fs from "fs";
-import path from "path";
 import db from "./config/conexion.js";
 import "./models/index.js";
 
@@ -31,14 +30,15 @@ app.use(express.urlencoded({
 }));
 
 // Crear carpeta uploads si no existe
-const uploadsDir = './uploads';
+const uploadsDir = "./uploads";
+
 if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir);
     console.log('Carpeta "uploads" creada correctamente');
 }
 
 // Servir la carpeta uploads como estática
-app.use('/uploads', express.static('uploads'));
+app.use("/uploads", express.static("uploads"));
 
 // Rutas de la API
 app.use("/api/usuarios", usersRoutes);
@@ -67,12 +67,12 @@ app.use((err, req, res, next) => {
 // Función de arranque del servidor
 const startServer = async () => {
     try {
-        console.log('Conectando a la base de datos');
+        console.log("Conectando a la base de datos");
         await db.authenticate();
 
-        console.log('Sincronizando modelos');
+        console.log("Sincronizando modelos");
         await db.sync({
-            force: false
+            alter: true
         });
 
         const server = app.listen(port, () => {
@@ -81,17 +81,17 @@ const startServer = async () => {
         });
 
         // Manejo de errores del servidor
-        server.on('error', (error) => {
-            if (error.code === 'EADDRINUSE') {
+        server.on("error", (error) => {
+            if (error.code === "EADDRINUSE") {
                 console.error(`El puerto ${port} ya está en uso.`);
             } else {
-                console.error('Error en el servidor:', error);
+                console.error("Error en el servidor:", error);
             }
             process.exit(1);
         });
 
     } catch (error) {
-        console.error('Fallo crítico al iniciar el servidor:', error);
+        console.error("Fallo crítico al iniciar el servidor:", error);
         process.exit(1);
     }
 };

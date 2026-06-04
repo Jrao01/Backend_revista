@@ -13,9 +13,21 @@ const Usuario = db.define('usuarios', {
         type: DataTypes.STRING,
         allowNull: false
     },
+    segundo_nombre: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     apellido: {
         type: DataTypes.STRING,
         allowNull: false
+    },
+    segundo_apellido: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    cedula: {
+        type: DataTypes.STRING,
+        allowNull: true
     },
     correo: {
         type: DataTypes.STRING,
@@ -26,9 +38,9 @@ const Usuario = db.define('usuarios', {
         type: DataTypes.STRING,
         allowNull: false
     },
-    orcid: {
+    oncti: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: true
     },
     afiliacion_institucional: {
         type: DataTypes.STRING,
@@ -36,8 +48,12 @@ const Usuario = db.define('usuarios', {
     }, // ejemplo: Programa de Medicina, Área de Ciencias de la Salud, Universidad Nacional Experimental de los Llanos Centrales Rómulo Gallegos (UNERG),
     // San Juan de los Morros, Venezuela
     rol: {
-        type: DataTypes.ENUM('admin', 'editor', 'revisor', 'autor'),
+        type: DataTypes.ENUM('admin', 'editor', 'revisor', 'investigador'),
         allowNull: false
+    },
+    cv: {
+        type: DataTypes.STRING,
+        allowNull: true
     },
     created_at: {
         type: DataTypes.DATE,
