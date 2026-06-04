@@ -11,7 +11,10 @@ const checkAuth = async (req, res, next) => {
         try {
             token = req.headers.authorization.split(" ")[1];
 
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const decoded = jwt.verify(
+                token,
+                process.env.JWT_SECRET || 'secreto_revista_cientifica_12345'
+            );
 
             req.usuario = await Usuario.findByPk(decoded.id, {
                 attributes: ['id', 'nombre', 'apellido', 'correo', 'rol', 'afiliacion_institucional']
