@@ -13,6 +13,7 @@ import areasRoutes from "./routes/areasRoutes.js";
 import programasRoutes from "./routes/programasRoutes.js";
 import lineasRoutes from "./routes/lineasRoutes.js";
 import revistaRoutes from "./routes/revistaRoutes.js";
+import editorRoutes from './routes/editorRoutes.js';
 
 // Configurar variables de entorno
 dotenv.config();
@@ -46,6 +47,7 @@ app.use("/api/areas", areasRoutes);
 app.use("/api/programas", programasRoutes);
 app.use("/api/lineas", lineasRoutes);
 app.use("/api/revistas", revistaRoutes);
+app.use('/api/editor', editorRoutes);
 
 // Error handling para JSON mal formado
 app.use((err, req, res, next) => {
