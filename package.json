@@ -12,6 +12,7 @@
         "start": "node index.js",
         "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
         "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+        "db:migrate": "node scripts/db-migrate.js",
         "db:reset": "node tests/scripts/reset-db.js",
         "seed:asignacion": "node tests/scripts/seed-asignacion.js",
         "test:asignacion": "node tests/scripts/test-asignacion-api.js"

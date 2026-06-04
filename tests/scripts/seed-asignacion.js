@@ -1,9 +1,6 @@
 /**
- * Seed completo para probar asignación Dixon.
- * Crea: usuario, programa, área, línea, revista, número (volumen 12), artículo.
- *
- * Uso (servidor puede estar arriba o abajo):
- *   npm run seed:asignacion
+ * Seed completo: usuario, revista, volumen, número, artículo.
+ * Uso: npm run seed:asignacion  (servidor arriba o abajo)
  */
 import bcrypt from 'bcrypt';
 import db from '../../config/conexion.js';
@@ -14,6 +11,7 @@ import {
     Area,
     LineaInvestigacion,
     Revista,
+    Volumen,
     NumeroRevista,
     Articulo
 } from '../../models/index.js';
@@ -21,19 +19,20 @@ import {
 const SEED = {
     correo: 'dixon.seed@test.com',
     password: 'password123',
-    volumen: 12,
+    numeroVolumen: 12,
+    numeroEdicion: 1,
     issn: 'SEED-DIXON-0001',
     tituloArticulo: 'Artículo seed Dixon - asignación'
 };
 
 async function seedAsignacion() {
-    console.log('--- Seed asignación Dixon (completo) ---\n');
+    console.log('--- Seed asignación Dixon (volumen + número) ---\n');
 
     await db.authenticate();
 
     const passwordHash = await bcrypt.hash(SEED.password, 10);
 
-    const [editor, editorNuevo] = await Usuario.findOrCreate({
+    const [editor] = await Usuario.findOrCreate({
         where: { correo: SEED.correo },
         defaults: {
             nombre: 'Dixon',
@@ -44,10 +43,6 @@ async function seedAsignacion() {
             afiliacion_institucional: 'UNERG'
         }
     });
-    if (!editorNuevo && editor.password !== passwordHash) {
-        editor.password = passwordHash;
-        await editor.save();
-    }
 
     const [programa] = await Programa.findOrCreate({
         where: { nombre: 'Programa Seed Dixon' },
@@ -82,32 +77,33 @@ async function seedAsignacion() {
         }
     });
 
-    let numero = await NumeroRevista.findOne({
-        where: {
+    const [volumen] = await Volumen.findOrCreate({
+        where: { revista_id: revista.id, numero_volumen: SEED.numeroVolumen },
+        defaults: {
             revista_id: revista.id,
-            volumen: SEED.volumen,
-            numero: 1
+            numero_volumen: SEED.numeroVolumen
         }
+    });
+
+    let numero = await NumeroRevista.findOne({
+        where: { volumen_id: volumen.id, numero: SEED.numeroEdicion }
     });
     if (!numero) {
         numero = await NumeroRevista.create({
             revista_id: revista.id,
-            volumen: SEED.volumen,
-            numero: 1,
+            volumen_id: volumen.id,
+            numero: SEED.numeroEdicion,
             anio: 2026,
             titulo_edicion: 'Enero-Junio (seed)',
             status: 'futuro'
         });
-        console.log('  [creado] número de revista');
+        console.log('  [creado] número');
     } else {
-        console.log('  [ya existía] número de revista');
+        console.log('  [ya existía] número');
     }
 
     let articulo = await Articulo.findOne({
-        where: {
-            titulo_es: SEED.tituloArticulo,
-            revista_id: revista.id
-        }
+        where: { titulo_es: SEED.tituloArticulo, revista_id: revista.id }
     });
     if (!articulo) {
         articulo = await Articulo.create({
@@ -129,27 +125,26 @@ async function seedAsignacion() {
         articulo.status = 'aprobado';
         articulo.numero_revista_id = null;
         await articulo.save();
-        console.log('  [ya existía] artículo (reset a aprobado, sin número)');
+        console.log('  [ya existía] artículo');
     }
 
-    console.log('\n========== DATOS LISTOS ==========\n');
-    console.log('Login:');
-    console.log(`  correo: ${SEED.correo}`);
-    console.log(`  password: ${SEED.password}\n`);
-    console.log('IDs para Thunder Client:');
-    console.log(`  revId (revista)     : ${revista.id}`);
-    console.log(`  volId en URL        : ${SEED.volumen}  ← campo "volumen", NO es tabla aparte hoy`);
-    console.log(`  numId en URL        : ${numero.id}     ← id de la fila, NO el campo "numero"`);
-    console.log(`  articulo_id (body)  : ${articulo.id}\n`);
-    console.log('Crear número (si lo haces manual):');
-    console.log(`  POST /api/revistas/${revista.id}/numeros\n`);
-    console.log('Tu endpoint asignar:');
+    console.log('\n========== THUNDER CLIENT ==========\n');
+    console.log(`Login: ${SEED.correo} / ${SEED.password}\n`);
+    console.log('Crear volumen (409 si duplicas numero_volumen):');
+    console.log(`  POST /api/revistas/${revista.id}/volumenes`);
+    console.log(`  { "numero_volumen": ${SEED.numeroVolumen} }\n`);
+    console.log('Crear número (409 si duplicas numero en el mismo volumen):');
+    console.log(`  POST /api/revistas/${revista.id}/volumenes/${volumen.id}/numeros`);
+    console.log(`  { "numero": ${SEED.numeroEdicion}, "anio": 2026, "titulo_edicion": "Enero-Junio" }\n`);
+    console.log('Asignar artículo (Dixon):');
     console.log(
-        `  POST /api/revistas/${revista.id}/volumenes/${SEED.volumen}/numeros/${numero.id}/articulos`
+        `  POST /api/revistas/${revista.id}/volumenes/${volumen.id}/numeros/${numero.id}/articulos`
     );
-    console.log(`  Body: { "articulo_id": ${articulo.id} }\n`);
-    console.log('Ver artículo después:');
+    console.log(`  { "articulo_id": ${articulo.id} }\n`);
+    console.log('Ver artículo:');
     console.log(`  GET /api/articulos/${articulo.id}\n`);
+    console.log('volId en URL = id del volumen (PK), NO el 12 impreso en la portada.');
+    console.log(`  Este volumen id=${volumen.id} tiene numero_volumen=${SEED.numeroVolumen}\n`);
 }
 
 seedAsignacion()

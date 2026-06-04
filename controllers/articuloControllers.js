@@ -1,7 +1,8 @@
 import {
     Articulo,
     ArchivoArticulo,
-    NumeroRevista
+    NumeroRevista,
+    Volumen
 } from "../models/index.js";
 
 // Registrar un artículo nuevo junto con su archivo principal
@@ -148,7 +149,11 @@ export const getArticleById = async (req, res) => {
         const articulo = await Articulo.findByPk(id, {
             include: [
                 { model: ArchivoArticulo },
-                { model: NumeroRevista, as: 'numero_revista' }
+                {
+                    model: NumeroRevista,
+                    as: 'numero_revista',
+                    include: [{ model: Volumen, as: 'volumen' }]
+                }
             ]
         });
 
@@ -259,17 +264,29 @@ export const asignarArticuloANumero = async (req, res) => {
             return res.status(400).json({ message: 'articulo_id es requerido' });
         }
 
+        const volumen = await Volumen.findOne({
+            where: {
+                id: parseInt(volId),
+                revista_id: parseInt(revId)
+            }
+        });
+        if (!volumen) {
+            return res.status(404).json({
+                message: 'Volumen no encontrado para esta revista'
+            });
+        }
+
         const numero = await NumeroRevista.findOne({
             where: {
                 id: parseInt(numId),
                 revista_id: parseInt(revId),
-                volumen: parseInt(volId)
+                volumen_id: volumen.id
             }
         });
 
         if (!numero) {
             return res.status(404).json({
-                message: 'Número de revista no encontrado para la revista y volumen indicados'
+                message: 'Número de revista no encontrado para el volumen indicado'
             });
         }
 

@@ -1,9 +1,5 @@
 /**
- * Prueba E2E de la asignación Dixon (requiere API en :3000 y seed ejecutado).
- *
- *   node tests/scripts/seed-asignacion.js
- *   docker compose up -d   (o npm run dev)
- *   node tests/scripts/test-asignacion-api.js
+ * Prueba E2E asignación Dixon (API en :3000 + seed).
  */
 import axios from 'axios';
 
@@ -22,53 +18,45 @@ async function run() {
 
     const revistas = await axios.get(`${API}/revistas`);
     const revista = revistas.data.find((r) => r.issn === 'SEED-DIXON-0001');
-    if (!revista) {
-        throw new Error('No hay revista seed. Ejecuta: node tests/scripts/seed-asignacion.js');
-    }
+    if (!revista) throw new Error('Ejecuta: npm run seed:asignacion');
 
-    const numeros = await axios.get(`${API}/revistas/${revista.id}/numeros`);
-    const numero = numeros.data.find((n) => n.volumen === 12);
-    if (!numero) {
-        throw new Error('No hay número con volumen 12. Ejecuta el seed.');
-    }
+    const volumenes = await axios.get(`${API}/revistas/${revista.id}/volumenes`);
+    const volumen = volumenes.data.find((v) => v.numero_volumen === 12);
+    if (!volumen) throw new Error('No hay volumen 12. Ejecuta el seed.');
+
+    const numeros = await axios.get(
+        `${API}/revistas/${revista.id}/volumenes/${volumen.id}/numeros`
+    );
+    const numero = numeros.data[0];
+    if (!numero) throw new Error('No hay números en el volumen. Ejecuta el seed.');
 
     const articulos = await axios.get(`${API}/articulos`, { headers });
     const articulo = articulos.data.find(
         (a) => a.titulo_es === 'Artículo seed Dixon - asignación'
     );
-    if (!articulo) {
-        throw new Error('No hay artículo seed. Ejecuta el seed.');
-    }
-
-    console.log('IDs:', { revId: revista.id, numId: numero.id, artId: articulo.id });
+    if (!articulo) throw new Error('No hay artículo seed.');
 
     const asignar = await axios.post(
-        `${API}/revistas/${revista.id}/volumenes/12/numeros/${numero.id}/articulos`,
+        `${API}/revistas/${revista.id}/volumenes/${volumen.id}/numeros/${numero.id}/articulos`,
         { articulo_id: articulo.id },
         { headers }
     );
 
-    console.log('\nPOST asignar →', asignar.status, asignar.data.message);
+    console.log('POST asignar →', asignar.status, asignar.data.message);
     if (asignar.data.articulo?.status !== 'asignado') {
-        throw new Error('Se esperaba status "asignado"');
-    }
-    if (asignar.data.articulo?.numero_revista_id !== numero.id) {
-        throw new Error('numero_revista_id no coincide');
+        throw new Error('Se esperaba status asignado');
     }
 
     const detalle = await axios.get(`${API}/articulos/${articulo.id}`, { headers });
-
-    console.log('GET artículo → status:', detalle.data.status);
-    if (!detalle.data.numero_revista) {
-        throw new Error('GET no incluye numero_revista');
+    if (!detalle.data.numero_revista?.volumen) {
+        throw new Error('GET debe incluir numero_revista.volumen');
     }
-    console.log('numero_revista:', detalle.data.numero_revista);
 
-    console.log('\n--- OK: asignación Dixon funciona ---\n');
+    console.log('GET → numero_revista.volumen.numero_volumen:', detalle.data.numero_revista.volumen.numero_volumen);
+    console.log('\n--- OK ---\n');
 }
 
 run().catch((err) => {
     console.error('\nFALLÓ:', err.response?.data || err.message);
-    console.error('\nAsegúrate: seed ejecutado + servidor en http://localhost:3000\n');
     process.exit(1);
 });

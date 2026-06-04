@@ -4,6 +4,7 @@ import cors from "cors";
 import morgan from "morgan";
 import fs from "fs";
 import db from "./config/conexion.js";
+import { runPendingMigrations } from "./config/runMigrations.js";
 import "./models/index.js";
 
 // Importar rutas
@@ -13,6 +14,7 @@ import areasRoutes from "./routes/areasRoutes.js";
 import programasRoutes from "./routes/programasRoutes.js";
 import lineasRoutes from "./routes/lineasRoutes.js";
 import revistaRoutes from "./routes/revistaRoutes.js";
+import volumenesRoutes from "./routes/volumenesRoutes.js";
 import editorRoutes from './routes/editorRoutes.js';
 
 // Configurar variables de entorno
@@ -47,6 +49,7 @@ app.use("/api/areas", areasRoutes);
 app.use("/api/programas", programasRoutes);
 app.use("/api/lineas", lineasRoutes);
 app.use("/api/revistas", revistaRoutes);
+app.use("/api/volumenes", volumenesRoutes);
 app.use('/api/editor', editorRoutes);
 
 // Error handling para JSON mal formado
@@ -70,10 +73,12 @@ const startServer = async () => {
         console.log("Conectando a la base de datos");
         await db.authenticate();
 
+        console.log("Aplicando migraciones pendientes");
+        await runPendingMigrations();
+
+        // sync sin alter: crea tablas que faltan, no toca columnas existentes (no borra datos).
         console.log("Sincronizando modelos");
-        await db.sync({
-            alter: true
-        });
+        await db.sync();
 
         const server = app.listen(port, () => {
             console.log(`SERVIDOR ACTIVO EN PUERTO: ${port}`);

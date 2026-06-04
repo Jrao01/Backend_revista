@@ -2,6 +2,11 @@ node_modules/
 .env
 requerimientos.txt
 uploads/*
-database.sqlite
+# SQLite local (datos de tu máquina, no van al repo)
+config/*.sqlite
+config/*.sqlite-journal
+config/*.sqlite-wal
+config/*.sqlite-shm
+database.dev.sqlite
 preguntas.txt
 requerimientos.json

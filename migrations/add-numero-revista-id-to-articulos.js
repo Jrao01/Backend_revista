@@ -1,4 +1,9 @@
-export async function up(queryInterface, Sequelize) {
+export async function up(queryInterface, Sequelize, helpers = {}) {
+    const hasTable = helpers.tableExists
+        ? await helpers.tableExists('articulos')
+        : true;
+    if (!hasTable) return;
+
     const table = await queryInterface.describeTable('articulos');
 
     if (table.numero_id && !table.numero_revista_id) {
