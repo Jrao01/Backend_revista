@@ -1,4 +1,6 @@
-export async function up(queryInterface, Sequelize) {
+export async function up(queryInterface, Sequelize, helpers = {}) {
+    if (helpers.tableExists && await helpers.tableExists('programas')) return;
+
     await queryInterface.createTable('programas', {
       id: {
         type: Sequelize.INTEGER,

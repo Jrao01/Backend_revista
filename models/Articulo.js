@@ -17,7 +17,7 @@ const Articulo = db.define('articulos', {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    numero_id: {
+    numero_revista_id: {
         type: DataTypes.INTEGER,
         allowNull: true
     },
@@ -65,7 +65,7 @@ const Articulo = db.define('articulos', {
         allowNull: true
     },
     status: {
-        type: DataTypes.ENUM('enviado', 'en_revision', 'aprobado', 'rechazado', 'publicado', 'por_corregir', 'En_evaluacion', 'por_evaluar', 'Corregido'),
+        type: DataTypes.ENUM('enviado', 'en_revision', 'aprobado', 'rechazado', 'publicado', 'por_corregir', 'En_evaluacion', 'por_evaluar', 'Corregido', 'asignado'),
         defaultValue: 'enviado'
     },
     contenido_estructurado: {

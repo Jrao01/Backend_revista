@@ -1,6 +1,8 @@
 import {
     Articulo,
-    ArchivoArticulo
+    ArchivoArticulo,
+    NumeroRevista,
+    Volumen
 } from "../models/index.js";
 
 // Registrar un artículo nuevo junto con su archivo principal
@@ -145,9 +147,14 @@ export const getArticleById = async (req, res) => {
             id
         } = req.params;
         const articulo = await Articulo.findByPk(id, {
-            include: [{
-                model: ArchivoArticulo
-            }]
+            include: [
+                { model: ArchivoArticulo },
+                {
+                    model: NumeroRevista,
+                    as: 'numero_revista',
+                    include: [{ model: Volumen, as: 'volumen' }]
+                }
+            ]
         });
 
         if (!articulo) {
@@ -247,21 +254,88 @@ export const getArticulosAprobados = async (req, res) => {
     }
 };
 
-// New endpoint to assign an approved article to a specific número (which includes volumen)
+// Asignar artículo a un número (ruta anidada bajo revista/volumen/número)
+export const asignarArticuloANumero = async (req, res) => {
+    try {
+        const { revId, volId, numId } = req.params;
+        const { articulo_id } = req.body;
+
+        if (!articulo_id) {
+            return res.status(400).json({ message: 'articulo_id es requerido' });
+        }
+
+        const volumen = await Volumen.findOne({
+            where: {
+                id: parseInt(volId),
+                revista_id: parseInt(revId)
+            }
+        });
+        if (!volumen) {
+            return res.status(404).json({
+                message: 'Volumen no encontrado para esta revista'
+            });
+        }
+
+        const numero = await NumeroRevista.findOne({
+            where: {
+                id: parseInt(numId),
+                revista_id: parseInt(revId),
+                volumen_id: volumen.id
+            }
+        });
+
+        if (!numero) {
+            return res.status(404).json({
+                message: 'Número de revista no encontrado para el volumen indicado'
+            });
+        }
+
+        const articulo = await Articulo.findByPk(articulo_id);
+        if (!articulo) {
+            return res.status(404).json({ message: 'Artículo no encontrado' });
+        }
+
+        if (articulo.revista_id !== parseInt(revId)) {
+            return res.status(400).json({ message: 'El artículo no pertenece a esta revista' });
+        }
+
+        articulo.numero_revista_id = numero.id;
+        articulo.status = 'asignado';
+        await articulo.save();
+
+        res.status(200).json({
+            message: 'Artículo asignado al número correctamente',
+            articulo
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: 'Error al asignar artículo al número',
+            error: error.message
+        });
+    }
+};
+
+// Compatibilidad: asignar por ID de artículo en params
 export const assignArticle = async (req, res) => {
     try {
-        const { id } = req.params; // article id
-        const { numero_id } = req.body; // the NumeroRevista id to assign
-        if (!numero_id) {
-            return res.status(400).json({ message: 'numero_id is required' });
+        const { id } = req.params;
+        const { numero_revista_id, numero_id } = req.body;
+        const numeroRevistaId = numero_revista_id ?? numero_id;
+
+        if (!numeroRevistaId) {
+            return res.status(400).json({ message: 'numero_revista_id es requerido' });
         }
+
         const articulo = await Articulo.findByPk(id);
         if (!articulo) {
             return res.status(404).json({ message: 'Artículo no encontrado' });
         }
-        // Update the foreign key
-        articulo.numero_id = numero_id;
+
+        articulo.numero_revista_id = numeroRevistaId;
+        articulo.status = 'asignado';
         await articulo.save();
+
         res.json({ message: 'Artículo asignado correctamente', articulo });
     } catch (error) {
         console.log(error);

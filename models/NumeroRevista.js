@@ -11,18 +11,19 @@ const NumeroRevista = db.define('numeros_revista', {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-    volumen: {
-        type: DataTypes.INTEGER
+    volumen_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false
     },
     numero: {
-        type: DataTypes.INTEGER
+        type: DataTypes.INTEGER,
+        allowNull: false
     },
     anio: {
         type: DataTypes.INTEGER
     },
     titulo_edicion: {
         type: DataTypes.STRING
-        // note: 'Enero-Junio, Edición Especial'
     },
     status: {
         type: DataTypes.ENUM('futuro', 'publicado'),
@@ -33,7 +34,14 @@ const NumeroRevista = db.define('numeros_revista', {
     }
 }, {
     timestamps: false,
-    tableName: 'numeros_revista'
+    tableName: 'numeros_revista',
+    indexes: [
+        {
+            unique: true,
+            fields: ['volumen_id', 'numero'],
+            name: 'uq_numeros_volumen_numero'
+        }
+    ]
 });
 
 export default NumeroRevista;
