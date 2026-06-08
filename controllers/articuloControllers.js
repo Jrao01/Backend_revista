@@ -1,8 +1,14 @@
+import { Op, fn, col } from 'sequelize';
 import {
     Articulo,
     ArchivoArticulo,
     NumeroRevista,
-    Volumen
+    Volumen,
+    Revista,
+    Usuario,
+    AutorSecundario,
+    LineaInvestigacion,
+    Evaluacion
 } from "../models/index.js";
 
 // Registrar un artículo nuevo junto con su archivo principal
@@ -10,9 +16,7 @@ export const postArticle = async (req, res) => {
     try {
         const {
             revista_id,
-            programa_id,
             linea_id,
-            autor_principal_id,
             titulo_es,
             titulo_en,
             resumen_es,
@@ -23,22 +27,26 @@ export const postArticle = async (req, res) => {
             firma_etica
         } = req.body;
 
-        // Determinar el autor principal: del body o del usuario logueado
-        const autorId = req.usuario ? req.usuario.id : autor_principal_id;
+        const autorId = req.usuario ? req.usuario.id : req.body.autor_principal_id;
 
         if (!autorId) {
-            return res.status(400).json({
-                message: "Falta proporcionar el ID del autor principal"
-            });
+            return res.status(400).json({ message: "Falta proporcionar el ID del autor principal" });
+        }
+
+        if (!linea_id) {
+            return res.status(400).json({ message: "La línea de investigación es requerida" });
+        }
+
+        const linea = await LineaInvestigacion.findByPk(linea_id);
+        if (!linea) {
+            return res.status(400).json({ message: "Línea de investigación no encontrada" });
         }
 
         const firmaOriginalidad = firma_originalidad === 'true' || firma_originalidad === true;
         const firmaEtica = firma_etica === 'true' || firma_etica === true;
 
-        // Crear el registro del artículo
         const articulo = await Articulo.create({
             revista_id,
-            programa_id,
             linea_id,
             autor_principal_id: autorId,
             titulo_es,
@@ -56,9 +64,13 @@ export const postArticle = async (req, res) => {
         const anonimo = es_anonimo === 'true' || es_anonimo === true;
 
         if (req.files) {
+            if (req.files.img && req.files.img[0]) {
+                await articulo.update({ img: req.files.img[0].path.replace(/\\/g, '/') });
+            }
+
             const archivosPermitidos = [
                 'manuscrito_original',
-                'pagina_titulo',
+                'manuscrito_anonimizado',
                 'ficha_autores',
                 'material_suplementario'
             ];
@@ -68,10 +80,32 @@ export const postArticle = async (req, res) => {
                     archivosCreados.push(await ArchivoArticulo.create({
                         articulo_id: articulo.id,
                         tipo_archivo: fieldName,
-                        url: req.files[fieldName][0].path,
+                        url: req.files[fieldName][0].path.replace(/\\/g, '/'),
                         version: 1,
-                        es_anonimo: anonimo
+                        es_anonimo: fieldName === 'manuscrito_anonimizado' ? true : anonimo
                     }));
+                }
+            }
+        }
+
+        // Crear coautores si se proporcionaron
+        const coautoresCreados = [];
+        if (req.body.coautores) {
+            let coautorIds = [];
+            try {
+                coautorIds = JSON.parse(req.body.coautores);
+            } catch (_) {
+                coautorIds = [];
+            }
+            if (Array.isArray(coautorIds) && coautorIds.length > 0) {
+                for (const uid of coautorIds) {
+                    const userExists = await Usuario.findByPk(parseInt(uid));
+                    if (userExists) {
+                        coautoresCreados.push(await AutorSecundario.create({
+                            articulo_id: articulo.id,
+                            usuario_id: parseInt(uid)
+                        }));
+                    }
                 }
             }
         }
@@ -79,7 +113,8 @@ export const postArticle = async (req, res) => {
         res.status(201).json({
             message: "Artículo registrado exitosamente",
             articulo,
-            archivos: archivosCreados
+            archivos: archivosCreados,
+            coautores: coautoresCreados
         });
 
     } catch (error) {
@@ -122,7 +157,7 @@ export const postArchive = async (req, res) => {
         const archivo = await ArchivoArticulo.create({
             articulo_id: articulo.id,
             tipo_archivo: tipo_archivo || '',
-            url: req.file.path,
+            url: req.file.path.replace(/\\/g, '/'),
             version: version ? parseInt(version) : 1,
             es_anonimo: es_anonimo === 'true' || es_anonimo === true
         });
@@ -153,11 +188,27 @@ export const getArticleById = async (req, res) => {
                     model: NumeroRevista,
                     as: 'numero_revista',
                     include: [{ model: Volumen, as: 'volumen' }]
+                },
+                {
+                    model: Revista,
+                    as: 'revista'
+                },
+                {
+                    model: Usuario,
+                    as: 'autor_principal',
+                    attributes: { exclude: ['password'] }
+                },
+                {
+                    model: AutorSecundario,
+                    include: [{
+                        model: Usuario,
+                        attributes: { exclude: ['password'] }
+                    }]
                 }
             ]
         });
 
-        if (!articulo) {
+        if (!articulo || articulo.status !== 'publicado') {
             return res.status(404).json({
                 message: "Artículo no encontrado"
             });
@@ -173,6 +224,57 @@ export const getArticleById = async (req, res) => {
     }
 };
 
+const makeSlug = (text) => {
+    return text
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
+};
+
+export const getArticleBySlug = async (req, res) => {
+    try {
+        const { slug } = req.params;
+        const allArticles = await Articulo.findAll({
+            include: [
+                { model: ArchivoArticulo },
+                {
+                    model: NumeroRevista,
+                    as: 'numero_revista',
+                    include: [{ model: Volumen, as: 'volumen' }]
+                },
+                {
+                    model: Revista,
+                    as: 'revista'
+                },
+                {
+                    model: Usuario,
+                    as: 'autor_principal',
+                    attributes: { exclude: ['password'] }
+                },
+                {
+                    model: AutorSecundario,
+                    include: [{
+                        model: Usuario,
+                        attributes: { exclude: ['password'] }
+                    }]
+                }
+            ]
+        });
+
+        const match = allArticles.find(a => makeSlug(a.titulo_es) === slug && a.status === 'publicado');
+        if (!match) {
+            return res.status(404).json({ message: "Artículo no encontrado" });
+        }
+        res.json(match);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Error al obtener el artículo", error: error.message });
+    }
+};
+
 export const updateArticle = async (req, res) => {
     try {
         const {
@@ -184,7 +286,6 @@ export const updateArticle = async (req, res) => {
             resumen_es,
             resumen_en,
             palabras_clave,
-            programa_id,
             linea_id
         } = req.body;
 
@@ -200,7 +301,6 @@ export const updateArticle = async (req, res) => {
         if (resumen_es !== undefined) articulo.resumen_es = resumen_es;
         if (resumen_en !== undefined) articulo.resumen_en = resumen_en;
         if (palabras_clave !== undefined) articulo.palabras_clave = palabras_clave;
-        if (programa_id) articulo.programa_id = programa_id;
         if (linea_id) articulo.linea_id = linea_id;
 
         await articulo.save();
@@ -220,7 +320,51 @@ export const updateArticle = async (req, res) => {
 
 export const getArticulos = async (req, res) => {
     try {
-        const articulos = await Articulo.findAll();
+        const { numero_revista_id } = req.query;
+        const where = {};
+        if (numero_revista_id) where.numero_revista_id = parseInt(numero_revista_id, 10);
+        const articulos = await Articulo.findAll({
+            where,
+            include: [
+                { model: ArchivoArticulo },
+                {
+                    model: Evaluacion,
+                    as: 'evaluaciones',
+                    attributes: ['id']
+                },
+                {
+                    model: Usuario,
+                    as: 'autor_principal',
+                    attributes: ['id', 'nombre', 'apellido', 'correo']
+                },
+                {
+                    model: AutorSecundario,
+                    include: [{
+                        model: Usuario,
+                        attributes: ['id', 'nombre', 'apellido']
+                    }]
+                },
+                {
+                    model: LineaInvestigacion,
+                    attributes: ['id', 'nombre']
+                },
+                {
+                    model: NumeroRevista,
+                    as: 'numero_revista',
+                    include: [{
+                        model: Volumen,
+                        as: 'volumen',
+                        attributes: ['id', 'numero_volumen'],
+                        include: [{
+                            model: Revista,
+                            as: 'revista',
+                            attributes: ['id', 'nombre']
+                        }]
+                    }]
+                }
+            ],
+            order: [['fecha_recepcion', 'DESC']]
+        });
         res.json(articulos);
     } catch (error) {
         console.log(error);
@@ -240,15 +384,89 @@ export const getArticulosAprobados = async (req, res) => {
         }
         const articulos = await Articulo.findAll({
             where: whereClause,
-            include: [{
-                model: ArchivoArticulo
-            }]
+            include: [
+                { model: ArchivoArticulo },
+                {
+                    model: Usuario,
+                    as: 'autor_principal',
+                    attributes: ['id', 'nombre', 'apellido', 'correo']
+                },
+                {
+                    model: AutorSecundario,
+                    include: [{
+                        model: Usuario,
+                        attributes: ['id', 'nombre', 'apellido']
+                    }]
+                },
+                {
+                    model: NumeroRevista,
+                    as: 'numero_revista',
+                    include: [{
+                        model: Volumen,
+                        as: 'volumen',
+                        attributes: ['id', 'numero_volumen']
+                    }]
+                },
+                { model: LineaInvestigacion, as: 'lineas_investigacion', attributes: ['id', 'nombre'] }
+            ],
+            order: [['fecha_recepcion', 'DESC']]
         });
         res.json(articulos);
     } catch (error) {
         console.log(error);
         res.status(500).json({
-            message: "Error al obtener artículos aprobados",
+            message: "Error al obtener los artículos aprobados",
+            error: error.message
+        });
+    }
+};
+
+export const getArticulosPublicados = async (req, res) => {
+    try {
+        const { revistaId } = req.query;
+        const articulos = await Articulo.findAll({
+            where: { status: 'publicado' },
+            include: [
+                { model: ArchivoArticulo },
+                {
+                    model: Usuario,
+                    as: 'autor_principal',
+                    attributes: ['id', 'nombre', 'apellido', 'correo']
+                },
+                {
+                    model: AutorSecundario,
+                    include: [{
+                        model: Usuario,
+                        attributes: ['id', 'nombre', 'apellido']
+                    }]
+                },
+                {
+                    model: NumeroRevista,
+                    as: 'numero_revista',
+                    required: true,
+                    where: { status: 'publicado' },
+                    include: [{
+                        model: Volumen,
+                        as: 'volumen',
+                        required: true,
+                        include: [{
+                            model: Revista,
+                            as: 'revista',
+                            attributes: ['id', 'nombre'],
+                            where: revistaId ? { id: parseInt(revistaId) } : undefined,
+                            required: !!revistaId
+                        }]
+                    }]
+                },
+                { model: LineaInvestigacion, attributes: ['id', 'nombre'] }
+            ],
+            order: [['fecha_recepcion', 'DESC']]
+        });
+        res.json(articulos);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Error al obtener los artículos publicados",
             error: error.message
         });
     }
@@ -258,7 +476,7 @@ export const getArticulosAprobados = async (req, res) => {
 export const asignarArticuloANumero = async (req, res) => {
     try {
         const { revId, volId, numId } = req.params;
-        const { articulo_id } = req.body;
+        const { articulo_id, doi } = req.body;
 
         if (!articulo_id) {
             return res.status(400).json({ message: 'articulo_id es requerido' });
@@ -301,6 +519,9 @@ export const asignarArticuloANumero = async (req, res) => {
 
         articulo.numero_revista_id = numero.id;
         articulo.status = 'asignado';
+        if (doi !== undefined && doi !== null && doi !== '') {
+            articulo.doi = doi;
+        }
         await articulo.save();
 
         res.status(200).json({
@@ -320,7 +541,7 @@ export const asignarArticuloANumero = async (req, res) => {
 export const assignArticle = async (req, res) => {
     try {
         const { id } = req.params;
-        const { numero_revista_id, numero_id } = req.body;
+        const { numero_revista_id, numero_id, doi } = req.body;
         const numeroRevistaId = numero_revista_id ?? numero_id;
 
         if (!numeroRevistaId) {
@@ -334,11 +555,300 @@ export const assignArticle = async (req, res) => {
 
         articulo.numero_revista_id = numeroRevistaId;
         articulo.status = 'asignado';
+        if (doi !== undefined && doi !== null && doi !== '') {
+            articulo.doi = doi;
+        }
         await articulo.save();
 
         res.json({ message: 'Artículo asignado correctamente', articulo });
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: 'Error al asignar artículo', error: error.message });
+    }
+};
+
+// Artículos relacionados: misma línea → mismo programa → cualquier artículo
+export const getRelatedArticles = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const articulo = await Articulo.findByPk(id);
+        if (!articulo) {
+            return res.status(404).json({ message: 'Artículo no encontrado' });
+        }
+
+        const commonInclude = [
+            {
+                model: Usuario,
+                as: 'autor_principal',
+                attributes: ['id', 'nombre', 'apellido']
+            },
+            {
+                model: AutorSecundario,
+                include: [{
+                    model: Usuario,
+                    attributes: ['id', 'nombre', 'apellido']
+                }]
+            },
+            {
+                model: LineaInvestigacion,
+                as: 'lineas_investigacion',
+                attributes: ['id', 'nombre']
+            },
+            {
+                model: NumeroRevista,
+                as: 'numero_revista',
+                include: [{ model: Volumen, as: 'volumen', attributes: ['id', 'numero_volumen'] }]
+            }
+        ];
+        const baseWhere = {
+            id: { [Op.ne]: parseInt(id) },
+            status: 'publicado'
+        };
+
+        // 1. Misma línea
+        let related = await Articulo.findAll({
+            where: { ...baseWhere, linea_id: articulo.linea_id },
+            include: commonInclude,
+            limit: 4,
+            order: [['fecha_recepcion', 'DESC']]
+        });
+
+        // 2. Si no hay suficientes, buscar por misma línea
+        if (related.length < 4) {
+            const existingIds = related.map(a => a.id).concat([parseInt(id)]);
+            const moreByLinea = await Articulo.findAll({
+                where: { ...baseWhere, linea_id: articulo.linea_id, id: { [Op.notIn]: existingIds } },
+                include: commonInclude,
+                limit: 4 - related.length,
+                order: [['fecha_recepcion', 'DESC']]
+            });
+            related = related.concat(moreByLinea);
+        }
+
+        // 3. Si aún no hay suficientes, los más recientes de la DB
+        if (related.length < 4) {
+            const existingIds = related.map(a => a.id).concat([parseInt(id)]);
+            const latest = await Articulo.findAll({
+                where: { ...baseWhere, id: { [Op.notIn]: existingIds } },
+                include: commonInclude,
+                limit: 4 - related.length,
+                order: [['fecha_recepcion', 'DESC']]
+            });
+            related = related.concat(latest);
+        }
+
+        res.json(related);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'Error al obtener artículos relacionados', error: error.message });
+    }
+};
+
+// Obtener artículos del usuario autenticado (investigador)
+export const getMyManuscripts = async (req, res) => {
+    try {
+        const autorId = req.usuario.id;
+        const articulos = await Articulo.findAll({
+            where: { autor_principal_id: autorId },
+            include: [
+                { model: ArchivoArticulo },
+                {
+                    model: AutorSecundario,
+                    include: [{
+                        model: Usuario,
+                        attributes: ['id', 'nombre', 'apellido']
+                    }]
+                },
+                {
+                    model: LineaInvestigacion,
+                    attributes: ['id', 'nombre']
+                },
+                {
+                    model: NumeroRevista,
+                    as: 'numero_revista',
+                    include: [{
+                        model: Volumen,
+                        as: 'volumen',
+                        attributes: ['id', 'numero_volumen']
+                    }]
+                }
+            ],
+            order: [['fecha_recepcion', 'DESC']]
+        });
+        res.json(articulos);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'Error al obtener tus manuscritos', error: error.message });
+    }
+};
+
+// Rechazar artículo (editor): crea registro en evaluaciones + cambia status
+export const rechazarArticulo = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { observaciones_editor, observaciones_autor } = req.body;
+        const editorId = req.usuario.id;
+
+        const articulo = await Articulo.findByPk(id);
+        if (!articulo) {
+            return res.status(404).json({ message: 'Artículo no encontrado' });
+        }
+
+        if (articulo.status === 'rechazado') {
+            return res.status(400).json({ message: 'El artículo ya ha sido rechazado' });
+        }
+
+        await Evaluacion.create({
+            articulo_id: articulo.id,
+            revisor_id: editorId,
+            veredicto: 'rechazado',
+            observaciones_editor: observaciones_editor || '',
+            observaciones_autor: observaciones_autor || '',
+            fecha_evaluacion: new Date()
+        });
+
+        articulo.status = 'rechazado';
+        await articulo.save();
+
+        res.json({ message: 'Artículo rechazado exitosamente', articulo });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'Error al rechazar el artículo', error: error.message });
+    }
+};
+
+// Re-subida de archivos por el autor (cuando está por_corregir)
+export const reUploadFiles = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { version } = req.body;
+
+        const articulo = await Articulo.findByPk(id);
+        if (!articulo) {
+            return res.status(404).json({ message: 'Artículo no encontrado' });
+        }
+
+        if (articulo.status !== 'por_corregir') {
+            return res.status(400).json({ message: 'Solo puedes re-subir archivos cuando el estado es "por corregir"' });
+        }
+
+        const archivosCreados = [];
+        const archivosPermitidos = [
+            'manuscrito_corregido'
+        ];
+
+        const versionNum = version ? parseInt(version) : 2;
+
+        if (req.files) {
+            for (const fieldName of archivosPermitidos) {
+                if (req.files[fieldName]) {
+                    archivosCreados.push(await ArchivoArticulo.create({
+                        articulo_id: articulo.id,
+                        tipo_archivo: 'manuscrito_corregido',
+                        url: req.files[fieldName][0].path.replace(/\\/g, '/'),
+                        version: versionNum,
+                        es_anonimo: false
+                    }));
+                }
+            }
+        }
+
+        articulo.status = 'Corregido';
+        await articulo.save();
+
+        res.json({
+            message: 'Archivos re-subidos exitosamente. El artículo está listo para revisión.',
+            articulo,
+            archivos: archivosCreados
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'Error al re-subir archivos', error: error.message });
+    }
+};
+
+// Obtener detalle completo de un artículo para admin/editor (sin restricción de status)
+export const getArticleAdminDetail = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const articulo = await Articulo.findByPk(id, {
+            include: [
+                { model: ArchivoArticulo },
+                {
+                    model: NumeroRevista,
+                    as: 'numero_revista',
+                    include: [{ model: Volumen, as: 'volumen', include: [{ model: Revista, as: 'revista' }] }]
+                },
+                {
+                    model: Revista,
+                    as: 'revista'
+                },
+                {
+                    model: Usuario,
+                    as: 'autor_principal',
+                    attributes: { exclude: ['password'] }
+                },
+                {
+                    model: AutorSecundario,
+                    include: [{
+                        model: Usuario,
+                        attributes: { exclude: ['password'] }
+                    }]
+                },
+                {
+                    model: LineaInvestigacion,
+                    as: 'lineas_investigacion',
+                    attributes: ['id', 'nombre']
+                },
+                {
+                    model: Evaluacion,
+                    as: 'evaluaciones',
+                    include: [{
+                        model: Usuario,
+                        as: 'revisor',
+                        attributes: ['id', 'nombre', 'apellido', 'correo']
+                    }]
+                }
+            ]
+        });
+
+        if (!articulo) {
+            return res.status(404).json({ message: 'Artículo no encontrado' });
+        }
+
+        res.json(articulo);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'Error al obtener el artículo', error: error.message });
+    }
+};
+
+// Obtener evaluaciones de un artículo propio (solo el autor)
+export const getMyArticleEvaluations = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const autorId = req.usuario.id;
+
+        const articulo = await Articulo.findByPk(id);
+        if (!articulo) {
+            return res.status(404).json({ message: 'Artículo no encontrado' });
+        }
+
+        if (articulo.autor_principal_id !== autorId) {
+            return res.status(403).json({ message: 'No tienes acceso a las evaluaciones de este artículo' });
+        }
+
+        const evaluaciones = await Evaluacion.findAll({
+            where: { articulo_id: id },
+            include: [
+                { model: Usuario, as: 'revisor', attributes: ['id', 'nombre', 'apellido', 'correo'] }
+            ],
+            order: [['id', 'ASC']]
+        });
+
+        res.json(evaluaciones);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: 'Error al obtener evaluaciones', error: error.message });
     }
 };

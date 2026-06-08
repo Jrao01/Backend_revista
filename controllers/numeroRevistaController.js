@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
-import { NumeroRevista, Volumen, Revista } from '../models/index.js';
+import { NumeroRevista, Volumen, Revista, Articulo } from '../models/index.js';
+import { generarGaleradaArticulo, generarPDFNumeroCompleto } from './galeradaControllers.js';
 
 const parseIds = (req) => ({
     revistaId: parseInt(req.params.revId ?? req.params.revistaId, 10),
@@ -58,6 +59,10 @@ export const createNumero = async (req, res) => {
         const { revistaId, volId } = parseIds(req);
         const { numero, anio, titulo_edicion, status, fecha_publicacion } = req.body;
 
+        if (fecha_publicacion && fecha_publicacion < new Date().toISOString().split('T')[0]) {
+            return res.status(400).json({ message: 'La fecha de publicación no puede ser anterior al día actual.' });
+        }
+
         const volumen = await obtenerVolumenDeRevista(revistaId, volId);
         if (!volumen) {
             return res.status(404).json({ message: 'Volumen no encontrado para esta revista' });
@@ -102,6 +107,10 @@ export const updateNumero = async (req, res) => {
         const { revistaId, volId, numId } = parseIds(req);
         const { numero, anio, titulo_edicion, status, fecha_publicacion } = req.body;
 
+        if (fecha_publicacion && fecha_publicacion < new Date().toISOString().split('T')[0]) {
+            return res.status(400).json({ message: 'La fecha de publicación no puede ser anterior al día actual.' });
+        }
+
         const volumen = await obtenerVolumenDeRevista(revistaId, volId);
         if (!volumen) {
             return res.status(404).json({ message: 'Volumen no encontrado para esta revista' });
@@ -132,11 +141,45 @@ export const updateNumero = async (req, res) => {
 
         if (anio !== undefined) registro.anio = anio;
         if (titulo_edicion !== undefined) registro.titulo_edicion = titulo_edicion;
-        if (status !== undefined) registro.status = status;
+        if (status !== undefined) {
+            // Validación: un número publicado no puede volver a futuro
+            if (registro.status === 'publicado' && status === 'futuro') {
+                return res.status(400).json({ 
+                    message: 'Un número publicado no puede cambiar su estado a futuro.',
+                    detalle: 'El número ya está publicado. Para cambiarlo debe crear un nuevo número.'
+                });
+            }
+            registro.status = status;
+        }
         if (fecha_publicacion !== undefined) registro.fecha_publicacion = fecha_publicacion;
 
         await registro.save();
-        res.json({ message: 'Número actualizado correctamente', numero: registro });
+
+        // Si se publica, publicar artículos relacionados y generar PDF del número
+        let articulosPublicados = [];
+        let numeroPdfPath = null;
+        if (status === 'publicado' && registro.status === 'publicado') {
+            const fechaPub = registro.fecha_publicacion || new Date().toISOString().split('T')[0];
+
+            const articulos = await Articulo.findAll({ where: { numero_revista_id: registro.id } });
+            for (const art of articulos) {
+                if (art.status !== 'publicado') {
+                    await art.update({ status: 'publicado', fecha_publicacion: fechaPub });
+                    const galerada = await generarGaleradaArticulo(art.id);
+                    articulosPublicados.push({ articulo: art.id, galerada });
+                }
+            }
+
+            try {
+                const pdfResult = await generarPDFNumeroCompleto(registro.id);
+                numeroPdfPath = pdfResult.relativePath;
+                await registro.update({ archivo_numero_pdf: numeroPdfPath });
+            } catch (pdfErr) {
+                console.error('Error generando PDF del número:', pdfErr.message);
+            }
+        }
+
+        res.json({ message: 'Número actualizado correctamente', numero: registro, articulosPublicados, numeroPdfPath });
     } catch (error) {
         if (error.name === 'SequelizeUniqueConstraintError') {
             return res.status(409).json({

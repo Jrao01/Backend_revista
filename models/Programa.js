@@ -7,13 +7,30 @@ const Programa = db.define('programas', {
     primaryKey: true,
     autoIncrement: true
   },
+  area_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
   nombre: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    unique : true
+  },
+  status: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
   }
 }, {
   timestamps: false,
-  tableName: 'programas'
+  tableName: 'programas',
+      indexes: [
+        {
+            unique: true,
+            fields: ['area_id', 'nombre'],
+            name: 'uq_programas_area_nombre'
+        }
+    ]
 });
 
 export default Programa;

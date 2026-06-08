@@ -2,7 +2,9 @@ import { Router } from 'express';
 import { 
     realizarDeskReview, 
     subirManuscritoAnonimo, 
-    asignarJurados 
+    asignarJurados,
+    reAsignarJurados,
+    cambiarStatus
 } from '../controllers/editorControllers.js';
 import upload from '../middlewares/uploadMiddleware.js';
 import checkAuth from '../middlewares/authMiddleware.js'; 
@@ -17,5 +19,7 @@ router.use(checkAuth, checkRol(['editor', 'administrador']));
 router.put('/:id/desk-review', realizarDeskReview);
 router.put('/:id/anonimizar', upload.single('manuscrito_anonimo'), subirManuscritoAnonimo);
 router.post('/:id/asignar-jurados', asignarJurados);
+router.put('/:id/status', cambiarStatus);
+router.post('/:id/re-asignar', reAsignarJurados);
 
 export default router;

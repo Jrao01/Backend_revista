@@ -1,22 +1,18 @@
-### Variables
+### ============================================================
+###  API REVISTA CIENTIFICA — TODOS LOS ENDPOINTS
+###  Base URL: http://localhost:3000/api
+###  Roles: administrador | editor | revisor | investigador
+### ============================================================
+
 @baseUrl = http://localhost:3000/api
 @authToken = {{login.response.body.token}}
 
-### 1. Registrar Usuario
-POST {{baseUrl}}/usuarios/registro
-Content-Type: application/json
 
-{
-    "nombre": "Prueba",
-    "apellido": "Usuario",
-    "correo": "test@correo.com",
-    "password": "password123",
-    "orcid": "1234-5678-9012-3456",
-    "afiliacion_institucional": "UNERG",
-    "rol": "autor"
-}
+### ============================================================
+###  AUTENTICACIÓN (Users)
+### ============================================================
 
-### 2. Login (Obtener Token)
+### Login — obtener token
 # @name login
 POST {{baseUrl}}/usuarios/login
 Content-Type: application/json
@@ -26,57 +22,403 @@ Content-Type: application/json
     "password": "password123"
 }
 
-### 3. Obtener Perfil (Incluye artículos)
+### Registrar usuario (público)
+POST {{baseUrl}}/usuarios/registro
+Content-Type: application/json
+
+{
+    "nombre": "Prueba",
+    "apellido": "Usuario",
+    "correo": "nuevo@correo.com",
+    "password": "password123",
+    "orcid": "1234-5678-9012-3456",
+    "afiliacion_institucional": "UNERG",
+    "rol": "investigador"
+}
+
+### Obtener perfil de usuario
 GET {{baseUrl}}/usuarios/{{login.response.body.usuario.id}}
 Authorization: Bearer {{authToken}}
 
-### 4. Crear Área
-# @name crearArea
-POST {{baseUrl}}/areas
+### Listar todos los usuarios (auth)
+GET {{baseUrl}}/usuarios/todos
+Authorization: Bearer {{authToken}}
+
+### Actualizar usuario
+PUT {{baseUrl}}/usuarios/{{login.response.body.usuario.id}}
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-    "nombre": "Ciencias de la Salud",
-    "color_institucional": "#3366ff"
+    "nombre": "Nombre Actualizado"
 }
 
-### 5. Crear Programa
-# @name crearPrograma
+
+### ============================================================
+###  PROGRAMAS (Ponce)
+###  Base: /api/programas
+### ============================================================
+
+### Listar programas
+GET {{baseUrl}}/programas
+
+### Obtener programa por ID
+GET {{baseUrl}}/programas/1
+
+### Crear programa (auth)
 POST {{baseUrl}}/programas
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-    "nombre": "Odontología",
-    "area_id": {{crearArea.response.body.area.id}}
+    "nombre": "Ingeniería Informática"
 }
 
-### 6. Crear Línea de Investigación
+### Actualizar programa (auth)
+PUT {{baseUrl}}/programas/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "nombre": "Ingeniería de Sistemas"
+}
+
+### Eliminar programa (auth)
+DELETE {{baseUrl}}/programas/1
+Authorization: Bearer {{authToken}}
+
+
+### ============================================================
+###  ÁREAS (Ponce)
+###  Base: /api/areas
+### ============================================================
+
+### Listar áreas
+GET {{baseUrl}}/areas
+
+### Obtener área por ID
+GET {{baseUrl}}/areas/1
+
+### Crear área (auth)
+POST {{baseUrl}}/areas
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "programa_id": 1,
+    "nombre": "Ciencias de la Computación",
+    "color_institucional": "#3366ff"
+}
+
+### Actualizar área (auth)
+PUT {{baseUrl}}/areas/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "nombre": "Ciencias Computacionales"
+}
+
+### Eliminar área (auth)
+DELETE {{baseUrl}}/areas/1
+Authorization: Bearer {{authToken}}
+
+
+### ============================================================
+###  LÍNEAS DE INVESTIGACIÓN (Ponce)
+###  Base: /api/lineas
+### ============================================================
+
+### Listar líneas
+GET {{baseUrl}}/lineas
+
+### Obtener línea por ID
+GET {{baseUrl}}/lineas/1
+
+### Crear línea (auth)
 POST {{baseUrl}}/lineas
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-    "nombre": "Salud Bucal",
-    "area_id": {{crearArea.response.body.area.id}},
+    "area_id": 1,
+    "nombre": "Inteligencia Artificial",
     "tipo": "Matriz"
 }
 
-### 7. Ver Artículos (General)
+### Actualizar línea (auth)
+PUT {{baseUrl}}/lineas/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "nombre": "IA Aplicada",
+    "tipo": "Asociada"
+}
+
+### Eliminar línea (auth)
+DELETE {{baseUrl}}/lineas/1
+Authorization: Bearer {{authToken}}
+
+
+### ============================================================
+###  ARTÍCULOS
+###  Base: /api/articulos
+### ============================================================
+
+### Listar todos los artículos (auth)
 GET {{baseUrl}}/articulos
 Authorization: Bearer {{authToken}}
 
-### 8. Ver Detalle de Artículo Específico
+### Obtener artículo por ID (incluye archivos, numero_revista)
 GET {{baseUrl}}/articulos/1
 Authorization: Bearer {{authToken}}
 
-### 9. Editar Artículo
+### Registrar artículo nuevo (con archivos)
+POST {{baseUrl}}/articulos/registrar
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data
+
+manuscrito_original: (file)
+pagina_titulo: (file)
+ficha_autores: (file)
+material_suplementario: (file)
+
+### Actualizar datos de artículo
 PUT {{baseUrl}}/articulos/1
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
-    "titulo_es": "Nuevo Título Editado",
-    "resumen_es": "Este es un nuevo resumen actualizado para la prueba."
+    "titulo_es": "Nuevo Título",
+    "resumen_es": "Resumen actualizado"
 }
+
+### Agregar archivo adicional a artículo existente
+POST {{baseUrl}}/articulos/1/archivos
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data
+
+archivo: (file)
+
+### Listar artículos aprobados (auth)
+GET {{baseUrl}}/articulos/aprobados
+Authorization: Bearer {{authToken}}
+
+### Asignar artículo a número de revista (Dixon — ruta plana)
+PUT {{baseUrl}}/articulos/1/asignar
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "numero_revista_id": 1
+}
+
+
+### ============================================================
+###  REVISTAS
+###  Base: /api/revistas
+### ============================================================
+
+### Listar revistas
+GET {{baseUrl}}/revistas
+
+### Crear revista (auth)
+POST {{baseUrl}}/revistas
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "nombre": "Revista Científica UNERG",
+    "issn": "1234-5678"
+}
+
+### Actualizar revista (auth)
+PUT {{baseUrl}}/revistas/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "nombre": "Revista UNERG v2"
+}
+
+### Desactivar revista (auth)
+PATCH {{baseUrl}}/revistas/1/desactivar
+Authorization: Bearer {{authToken}}
+
+
+### ============================================================
+###  VOLÚMENES (Mark)
+###  Base: /api/revistas/:revId/volumenes
+### ============================================================
+
+### Listar todos los volúmenes (ruta standalone)
+GET {{baseUrl}}/volumenes
+
+### Listar volúmenes de una revista
+GET {{baseUrl}}/revistas/1/volumenes
+
+### Obtener volumen por ID
+GET {{baseUrl}}/revistas/1/volumenes/1
+
+### Crear volumen (auth)
+POST {{baseUrl}}/revistas/1/volumenes
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "numero_volumen": 12
+}
+
+### Actualizar volumen (auth)
+PUT {{baseUrl}}/revistas/1/volumenes/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "numero_volumen": 13
+}
+
+### Eliminar volumen (auth)
+DELETE {{baseUrl}}/revistas/1/volumenes/1
+Authorization: Bearer {{authToken}}
+
+
+### ============================================================
+###  NÚMEROS DE REVISTA (Mark)
+###  Base: /api/revistas/:revId/volumenes/:volId/numeros
+### ============================================================
+
+### Listar números de un volumen
+GET {{baseUrl}}/revistas/1/volumenes/1/numeros
+
+### Obtener número por ID
+GET {{baseUrl}}/revistas/1/volumenes/1/numeros/1
+
+### Crear número (auth)
+POST {{baseUrl}}/revistas/1/volumenes/1/numeros
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "numero": 1,
+    "anio": 2026,
+    "titulo_edicion": "Edición Especial IA",
+    "status": "futuro"
+}
+
+### Actualizar número (auth)
+PUT {{baseUrl}}/revistas/1/volumenes/1/numeros/1
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "status": "publicado",
+    "fecha_publicacion": "2026-06-01"
+}
+
+### Eliminar número (auth)
+DELETE {{baseUrl}}/revistas/1/volumenes/1/numeros/1
+Authorization: Bearer {{authToken}}
+
+
+### ============================================================
+###  ASIGNACIÓN DE ARTÍCULOS A NÚMEROS (Dixon)
+###  Base: /api/revistas/:revId/volumenes/:volId/numeros/:numId/articulos
+### ============================================================
+
+### Asignar artículo a número (ruta anidada)
+POST {{baseUrl}}/revistas/1/volumenes/1/numeros/1/articulos
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "articulo_id": 1
+}
+
+
+### ============================================================
+###  EDITOR — DESK REVIEW Y ANONIMIZACIÓN (Kelvin)
+###  Base: /api/editor
+### ============================================================
+
+### Desk Review — evaluar plagio
+PUT {{baseUrl}}/editor/1/desk-review
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "porcentaje_plagio": 15
+}
+
+### Subir manuscrito anonimizado
+PUT {{baseUrl}}/editor/1/anonimizar
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data
+
+manuscrito_anonimo: (file)
+
+### Asignar jurados (revisores) a artículo
+POST {{baseUrl}}/editor/1/asignar-jurados
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "juradosIds": [10, 20]
+}
+
+
+### ============================================================
+###  EVALUACIONES / ARBITRAJE (Kelvin)
+###  Base: /api/evaluaciones
+### ============================================================
+
+### Listar todas las evaluaciones (editor/admin)
+GET {{baseUrl}}/evaluaciones
+Authorization: Bearer {{authToken}}
+
+### Obtener evaluación por ID
+GET {{baseUrl}}/evaluaciones/1
+Authorization: Bearer {{authToken}}
+
+### Obtener evaluaciones de un artículo (editor/admin)
+GET {{baseUrl}}/evaluaciones/articulo/1
+Authorization: Bearer {{authToken}}
+
+### Enviar veredicto (revisor asignado)
+PUT {{baseUrl}}/evaluaciones/1/veredicto
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+    "veredicto": "aprobado",
+    "observaciones_editor": "Metodología sólida, originalidad adecuada.",
+    "observaciones_autor": "Excelente trabajo, suggestions: expandir sección 3."
+}
+
+### Eliminar evaluación pendiente (editor/admin)
+DELETE {{baseUrl}}/evaluaciones/1
+Authorization: Bearer {{authToken}}
+
+
+### ============================================================
+###  RESUMEN DE RESPUESTAS ESTÁNDAR
+### ============================================================
+###
+###  Éxito:
+###    { "ok": true, "message": "...", "data": { ... } }
+###
+###  Error:
+###    { "ok": false, "message": "...", "errors": "..." }
+###
+###  Códigos HTTP:
+###    200  OK
+###    201  Creado
+###    400  Solicitud inválida (validación)
+###    401  No autenticado (falta token)
+###    403  Sin permisos (rol insuficiente)
+###    404  No encontrado
+###    409  Conflicto (duplicado)
+###    410  Ruta obsoleta (deprecada)
+###    500  Error interno del servidor
+###

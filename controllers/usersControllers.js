@@ -102,6 +102,12 @@ export const crearUsuario = async (req, res) => {
                 message: "El correo electrónico proporcionado ya se encuentra registrado"
             });
         }
+        if (cedula) {
+            const cedulaExiste = await Usuario.findOne({ where: { cedula } });
+            if (cedulaExiste) {
+                return res.status(400).json({ message: "La cédula proporcionada ya se encuentra registrada" });
+            }
+        }
         const salt = await bycrpt.genSalt(10);
         const hashPassword = await bycrpt.hash(password, salt);
         await Usuario.create({
@@ -170,6 +176,44 @@ export const loginUsuario = async (req, res) => {
     }
 }
 
+// Obtener perfil del usuario autenticado
+export const getMyProfile = async (req, res) => {
+    try {
+        const usuario = await Usuario.findByPk(req.usuario.id, {
+            attributes: { exclude: ['password'] },
+            include: [
+                {
+                    model: Articulo,
+                    as: 'articulos_principales',
+                    attributes: ['id', 'titulo_es', 'status', 'fecha_recepcion']
+                }
+            ]
+        });
+        if (!usuario) {
+            return res.status(404).json({ message: "Usuario no encontrado" });
+        }
+        res.json(usuario);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Error al obtener perfil" });
+    }
+};
+
+// Subir o actualizar CV del usuario autenticado
+export const uploadCv = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: "No se ha proporcionado ningún archivo" });
+        }
+        const cvPath = req.file.path.replace(/\\/g, '/');
+        await Usuario.update({ cv: cvPath }, { where: { id: req.usuario.id } });
+        res.json({ message: "CV actualizado exitosamente", cv: cvPath });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Error al subir CV", error: error.message });
+    }
+};
+
 export const crearUsuarioAdmin = async (req, res) => {
     const {
         nombre,
@@ -195,12 +239,18 @@ export const crearUsuarioAdmin = async (req, res) => {
                 message: "El correo electrónico proporcionado ya se encuentra registrado"
             });
         }
+        if (cedula) {
+            const cedulaExiste = await Usuario.findOne({ where: { cedula } });
+            if (cedulaExiste) {
+                return res.status(400).json({ message: "La cédula proporcionada ya se encuentra registrada" });
+            }
+        }
         const salt = await bycrpt.genSalt(10);
         const hashPassword = await bycrpt.hash(password, salt);
         
         let cvPath = null;
         if (req.file) {
-            cvPath = req.file.path;
+            cvPath = req.file.path.replace(/\\/g, '/');
         }
 
         const nuevoUsuario = await Usuario.create({

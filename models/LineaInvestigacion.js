@@ -7,7 +7,7 @@ const LineaInvestigacion = db.define('lineas_investigacion', {
     primaryKey: true,
     autoIncrement: true
   },
-  area_id: {
+  programa_id: {
     type: DataTypes.INTEGER,
     allowNull: false
   },
@@ -15,14 +15,21 @@ const LineaInvestigacion = db.define('lineas_investigacion', {
     type: DataTypes.STRING,
     allowNull: false
   },
-  tipo: {
-    type: DataTypes.STRING,
-    allowNull: false
-    // note: 'Matriz, Asociada'
+  status: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
   }
 }, {
   timestamps: false,
-  tableName: 'lineas_investigacion'
+  tableName: 'lineas_investigacion',
+      indexes: [
+        {
+            unique: true,
+            fields: ['programa_id', 'nombre'],
+            name: 'uq_lineas_investigacion_programa_nombre'
+        }
+    ]
 });
 
 export default LineaInvestigacion;

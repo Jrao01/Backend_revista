@@ -16,6 +16,7 @@ const mockGetProgramaById = jest.fn((req, res) => {
         message: 'Programa obtenido exitosamente',
         data: {
             id: Number(req.params.id),
+            area_id: 1,
             nombre: 'Medicina'
         }
     });
@@ -98,21 +99,27 @@ describe('programasRoutes', () => {
     test('POST /api/programas debe crear programa con datos válidos', async () => {
         const response = await request(app)
             .post('/api/programas')
-            .send({
-                nombre: 'Medicina'
-            });
+            .send({ area_id: 1, nombre: 'Medicina' });
 
         expect(response.status).toBe(201);
         expect(response.body.ok).toBe(true);
         expect(mockCrearPrograma).toHaveBeenCalled();
     });
 
+    test('POST /api/programas debe fallar si falta area_id', async () => {
+        const response = await request(app)
+            .post('/api/programas')
+            .send({ nombre: 'Medicina' });
+
+        expect(response.status).toBe(400);
+        expect(response.body.ok).toBe(false);
+        expect(mockCrearPrograma).not.toHaveBeenCalled();
+    });
+
     test('POST /api/programas debe fallar si nombre está vacío', async () => {
         const response = await request(app)
             .post('/api/programas')
-            .send({
-                nombre: ''
-            });
+            .send({ area_id: 1, nombre: '' });
 
         expect(response.status).toBe(400);
         expect(response.body.ok).toBe(false);
@@ -122,9 +129,7 @@ describe('programasRoutes', () => {
     test('PUT /api/programas/:id debe actualizar programa con datos válidos', async () => {
         const response = await request(app)
             .put('/api/programas/1')
-            .send({
-                nombre: 'Medicina Integral'
-            });
+            .send({ area_id: 1, nombre: 'Medicina Integral' });
 
         expect(response.status).toBe(200);
         expect(response.body.ok).toBe(true);
@@ -134,9 +139,7 @@ describe('programasRoutes', () => {
     test('PUT /api/programas/:id debe fallar si ID no es numérico', async () => {
         const response = await request(app)
             .put('/api/programas/abc')
-            .send({
-                nombre: 'Medicina Integral'
-            });
+            .send({ nombre: 'Medicina Integral' });
 
         expect(response.status).toBe(400);
         expect(response.body.ok).toBe(false);

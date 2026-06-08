@@ -62,8 +62,7 @@ async function seedAsignacion() {
         where: { nombre: 'Línea Seed Dixon', area_id: area.id },
         defaults: {
             area_id: area.id,
-            nombre: 'Línea Seed Dixon',
-            tipo: 'Matriz'
+            nombre: 'Línea Seed Dixon'
         }
     });
 

@@ -27,7 +27,8 @@ const Usuario = db.define('usuarios', {
     },
     cedula: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true,
+        unique: true
     },
     correo: {
         type: DataTypes.STRING,

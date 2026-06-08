@@ -11,7 +11,8 @@ const Articulo = db.define('articulos', {
     },
     img: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true,
+        required: true
     },
     revista_id: {
         type: DataTypes.INTEGER,
@@ -21,43 +22,46 @@ const Articulo = db.define('articulos', {
         type: DataTypes.INTEGER,
         allowNull: true
     },
-    programa_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-    },
     linea_id: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
+        required: true
     },
     autor_principal_id: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
+        required: true
     },
     titulo_es: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        required: true
     },
     titulo_en: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING,
+        required: true
     },
     resumen_es: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        required: true
     },
     resumen_en: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        required: true
     },
     palabras_clave: {
-        type: DataTypes.STRING
+        type: DataTypes.STRING,
+        required: true
     },
     firma_originalidad: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
-        defaultValue: false
+        required: true,
     },
     firma_etica: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
-        defaultValue: false
+        required: true,
     },
     doi: {
         type: DataTypes.STRING,
@@ -68,14 +72,19 @@ const Articulo = db.define('articulos', {
         type: DataTypes.ENUM('enviado', 'en_revision', 'aprobado', 'rechazado', 'publicado', 'por_corregir', 'En_evaluacion', 'por_evaluar', 'Corregido', 'asignado'),
         defaultValue: 'enviado'
     },
-    contenido_estructurado: {
-        type: DataTypes.JSON
-    },
     fecha_recepcion: {
         type: DataTypes.DATEONLY
     },
     fecha_publicacion: {
         type: DataTypes.DATEONLY
+    },
+    pages: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    views: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
     }
 }, {
     timestamps: false,

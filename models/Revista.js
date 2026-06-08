@@ -23,6 +23,10 @@ const Revista = db.define('revistas', {
     descripcion: {
         type: DataTypes.STRING
     },
+    portada: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     activo: {
         type: DataTypes.BOOLEAN,
         defaultValue: true

@@ -96,7 +96,6 @@ describe('areasRoutes', () => {
         const response = await request(app)
             .post('/api/areas')
             .send({
-                programa_id: 1,
                 nombre: 'Ciencias de la Salud',
                 color_institucional: '#0057B8'
             });
@@ -106,24 +105,10 @@ describe('areasRoutes', () => {
         expect(mockCreateArea).toHaveBeenCalled();
     });
 
-    test('POST /api/areas debe fallar si falta programa_id', async () => {
-        const response = await request(app)
-            .post('/api/areas')
-            .send({
-                nombre: 'Ciencias de la Salud',
-                color_institucional: '#0057B8'
-            });
-
-        expect(response.status).toBe(400);
-        expect(response.body.ok).toBe(false);
-        expect(mockCreateArea).not.toHaveBeenCalled();
-    });
-
     test('POST /api/areas debe fallar si nombre está vacío', async () => {
         const response = await request(app)
             .post('/api/areas')
             .send({
-                programa_id: 1,
                 nombre: '',
                 color_institucional: '#0057B8'
             });

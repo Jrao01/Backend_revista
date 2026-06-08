@@ -73,7 +73,6 @@ Requiere `multipart/form-data`.
 - `resumen_es`, `resumen_en`: Resúmenes.
 - `palabras_clave`: String.
 - `es_anonimo`: "true" / "false".
-- `contenido_estructurado`: (Opcional) Objeto JSON con la estructura del artículo.
 
 **Archivos (File):**
 - `manuscrito_original` (Obligatorio), `pagina_titulo`, `carta_originalidad`, `ficha_autores`, `material_suplementario`.
@@ -84,7 +83,7 @@ Requiere `multipart/form-data`.
 | :--- | :--- | :--- | :--- |
 | `GET` | `/` | Listar todos los artículos | - |
 | `GET` | `/:id` | Detalle de un artículo | ID en URL. Incluye metadatos y lista de archivos. |
-| `PUT` | `/:id` | Editar metadatos | `titulo_es`, `resumen_es`, `linea_id`, `contenido_estructurado`, etc. |
+| `PUT` | `/:id` | Editar metadatos | `titulo_es`, `resumen_es`, `linea_id`, etc. |
 | `POST` | `/:id/archivos` | Subir archivo adicional | `archivo` (file), `tipo_archivo` (text), `version` (text). |
 
 ---

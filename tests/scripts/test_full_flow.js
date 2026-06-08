@@ -57,8 +57,7 @@ async function test() {
 
         const lineaRes = await axios.post(`${API_URL}/lineas`, {
             nombre: 'Epidemiología',
-            area_id: areaId,
-            tipo: 'Matriz'
+            area_id: areaId
         }, {
             headers
         });
