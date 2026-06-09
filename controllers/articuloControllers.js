@@ -280,6 +280,11 @@ export const updateArticle = async (req, res) => {
         const {
             id
         } = req.params;
+
+        if (!req.body || Object.keys(req.body).length === 0) {
+            return res.status(400).json({ message: "Cuerpo de la solicitud vacío. Envíe al menos un campo a actualizar." });
+        }
+
         const {
             titulo_es,
             titulo_en,

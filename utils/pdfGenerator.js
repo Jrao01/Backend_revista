@@ -2,9 +2,21 @@ import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import os from 'os';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+function getHeadlessShellPath() {
+  const cacheDir = path.join(os.homedir(), '.cache', 'puppeteer');
+  const shellDir = path.join(cacheDir, 'chrome-headless-shell');
+  if (!fs.existsSync(shellDir)) return null;
+  const platforms = fs.readdirSync(shellDir).filter(f => f.startsWith('win64'));
+  if (platforms.length === 0) return null;
+  const latest = platforms.sort().pop();
+  const exePath = path.join(shellDir, latest, 'chrome-headless-shell-win64', 'chrome-headless-shell.exe');
+  return fs.existsSync(exePath) ? exePath : null;
+}
 
 /**
  * Genera el HTML de galerada para un artículo individual.
@@ -329,10 +341,19 @@ export function generateNumeroRevistaHTML(numero, articulos, galeradaContents) {
 export async function htmlToPDF(htmlContent, outputPath) {
   let browser;
   try {
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    const shellPath = getHeadlessShellPath();
+    const launchOpts = {
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--no-zygote',
+        '--disable-gpu',
+        '--disable-dev-shm-usage'
+      ]
+    };
+    if (shellPath) launchOpts.executablePath = shellPath;
+    browser = await puppeteer.launch(launchOpts);
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
     await page.pdf({
@@ -354,10 +375,19 @@ export async function htmlToPDF(htmlContent, outputPath) {
 export async function htmlToPDFBuffer(htmlContent) {
   let browser;
   try {
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    const shellPath = getHeadlessShellPath();
+    const launchOpts = {
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--no-zygote',
+        '--disable-gpu',
+        '--disable-dev-shm-usage'
+      ]
+    };
+    if (shellPath) launchOpts.executablePath = shellPath;
+    browser = await puppeteer.launch(launchOpts);
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
     const pdfBuffer = await page.pdf({
