@@ -3,26 +3,31 @@ import path from 'path';
 
 const storage = multer.diskStorage({
     destination: function(req, file, cb) {
-        // Guarda los archivos en la carpeta uploads
         cb(null, 'uploads/');
     },
     filename: function(req, file, cb) {
-        // Nombre del archivo: nombre original del campo - timestamp - numero aleatorio + extension para nombre unicoooo
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
 
-// Filtro para aceptar solo ciertos tipos de archivos
 const fileFilter = (req, file, cb) => {
-    const filetypes = /pdf|doc|docx|jpg|jpeg|png|gif|webp/;
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = filetypes.test(file.mimetype) || file.mimetype.startsWith('image/');
-
-    if (mimetype && extname) {
-        return cb(null, true);
+    if (file.fieldname === 'img') {
+        const allowedMimes = ['image/jpeg', 'image/png', 'image/svg+xml', 'image/webp'];
+        const ext = path.extname(file.originalname).toLowerCase();
+        const allowedExts = ['.jpg', '.jpeg', '.png', '.svg', '.webp'];
+        if (allowedMimes.includes(file.mimetype) && allowedExts.includes(ext)) {
+            return cb(null, true);
+        }
+        cb(new Error('Formato de imagen no válido. Solo se permiten JPG, PNG, SVG o WebP.'));
     } else {
-        cb(new Error('Formato de archivo no válido. Solo se permiten PDF, documentos de Word (doc, docx) o imágenes (jpg, jpeg, png, gif, webp)'));
+        const filetypes = /pdf|doc|docx/;
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = filetypes.test(file.mimetype);
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error('Formato de archivo no válido. Solo se permiten PDF o documentos de Word (doc, docx)'));
     }
 };
 
@@ -30,7 +35,7 @@ const upload = multer({
     storage: storage,
     fileFilter: fileFilter,
     limits: {
-        fileSize: 15 * 1024 * 1024
+        fileSize: 25 * 1024 * 1024
     }
 });
 

@@ -16,9 +16,8 @@ const mockGetLineaById = jest.fn((req, res) => {
         message: 'Línea de investigación obtenida correctamente',
         data: {
             id: Number(req.params.id),
-            area_id: 1,
-            nombre: 'Salud pública y epidemiología',
-            tipo: 'Matriz'
+            programa_id: 1,
+            nombre: 'Salud pública y epidemiología'
         }
     });
 });
@@ -100,38 +99,27 @@ describe('lineasRoutes', () => {
     test('POST /api/lineas debe crear línea con datos válidos', async () => {
         const response = await request(app)
             .post('/api/lineas')
-            .send({
-                area_id: 1,
-                nombre: 'Salud pública y epidemiología',
-                tipo: 'Matriz'
-            });
+            .send({ programa_id: 1, nombre: 'Salud pública y epidemiología' });
 
         expect(response.status).toBe(201);
         expect(response.body.ok).toBe(true);
         expect(mockCreateLinea).toHaveBeenCalled();
     });
 
-    test('POST /api/lineas debe fallar si falta area_id', async () => {
+    test('POST /api/lineas debe fallar si falta programa_id', async () => {
         const response = await request(app)
             .post('/api/lineas')
-            .send({
-                nombre: 'Salud pública y epidemiología',
-                tipo: 'Matriz'
-            });
+            .send({ nombre: 'Salud pública y epidemiología' });
 
         expect(response.status).toBe(400);
         expect(response.body.ok).toBe(false);
         expect(mockCreateLinea).not.toHaveBeenCalled();
     });
 
-    test('POST /api/lineas debe fallar si tipo no es válido', async () => {
+    test('POST /api/lineas debe fallar si nombre está vacío', async () => {
         const response = await request(app)
             .post('/api/lineas')
-            .send({
-                area_id: 1,
-                nombre: 'Salud pública y epidemiología',
-                tipo: 'Otra'
-            });
+            .send({ programa_id: 1, nombre: '' });
 
         expect(response.status).toBe(400);
         expect(response.body.ok).toBe(false);
@@ -141,11 +129,7 @@ describe('lineasRoutes', () => {
     test('PUT /api/lineas/:id debe actualizar línea con datos válidos', async () => {
         const response = await request(app)
             .put('/api/lineas/1')
-            .send({
-                area_id: 1,
-                nombre: 'Línea Actualizada',
-                tipo: 'Asociada'
-            });
+            .send({ programa_id: 1, nombre: 'Línea Actualizada' });
 
         expect(response.status).toBe(200);
         expect(response.body.ok).toBe(true);
@@ -155,21 +139,7 @@ describe('lineasRoutes', () => {
     test('PUT /api/lineas/:id debe fallar si ID no es numérico', async () => {
         const response = await request(app)
             .put('/api/lineas/abc')
-            .send({
-                nombre: 'Línea Actualizada'
-            });
-
-        expect(response.status).toBe(400);
-        expect(response.body.ok).toBe(false);
-        expect(mockUpdateLinea).not.toHaveBeenCalled();
-    });
-
-    test('PUT /api/lineas/:id debe fallar si tipo no es válido', async () => {
-        const response = await request(app)
-            .put('/api/lineas/1')
-            .send({
-                tipo: 'Otra'
-            });
+            .send({ nombre: 'Línea Actualizada' });
 
         expect(response.status).toBe(400);
         expect(response.body.ok).toBe(false);

@@ -2,3 +2,16 @@ node_modules
 npm-debug.log
 .git
 .gitignore
+Dockerfile
+docker-compose.yml
+.env
+.eslintrc
+.prettierrc
+README.md
+.vscode
+uploads/articulos/*
+!uploads/articulos/.gitkeep
+uploads/numeros/*
+!uploads/numeros/.gitkeep
+uploads/revistas/*
+!uploads/revistas/.gitkeep

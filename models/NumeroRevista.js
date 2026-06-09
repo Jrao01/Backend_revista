@@ -31,6 +31,18 @@ const NumeroRevista = db.define('numeros_revista', {
     },
     fecha_publicacion: {
         type: DataTypes.DATEONLY
+    },
+    views: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    },
+    downloads: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    },
+    archivo_numero_pdf: {
+        type: DataTypes.STRING,
+        allowNull: true
     }
 }, {
     timestamps: false,

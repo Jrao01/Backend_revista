@@ -5,9 +5,12 @@ import checkAuth from '../middlewares/authMiddleware.js';
 
 import {
     getRevistas,
+    getRevistaById,
+    getAllRevistasAdmin,
     crearRevista,
     actualizarRevista,
-    desactivarRevista
+    desactivarRevista,
+    activarRevista
 } from '../controllers/revistaControllers.js';
 import {
     listVolumenes,
@@ -32,9 +35,12 @@ const volIdParam = param('volId').isInt().withMessage('volId debe ser numérico'
 const numIdParam = param('numId').isInt().withMessage('numId debe ser numérico');
 
 router.get('/', getRevistas);
+router.get('/admin/all', checkAuth, getAllRevistasAdmin);
+router.get('/:id', [param('id').isInt().withMessage('id debe ser numérico'), validarCampos], getRevistaById);
 router.post('/', checkAuth, crearRevista);
 router.put('/:id', checkAuth, actualizarRevista);
 router.patch('/:id/desactivar', checkAuth, desactivarRevista);
+router.patch('/:id/activar', checkAuth, activarRevista);
 
 // --- Volúmenes (Mark) ---
 router.get('/:revId/volumenes', [revIdParam, validarCampos], listVolumenes);

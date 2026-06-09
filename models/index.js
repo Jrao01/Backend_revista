@@ -10,33 +10,25 @@ import Evaluacion from './Evaluacion.js';
 import NumeroRevista from './NumeroRevista.js';
 import Volumen from './Volumen.js';
 
-// programas.id < areas.programa_id
-Programa.hasMany(Area, {
-    foreignKey: 'programa_id',
-    as: 'areas'
-});
-
-Area.belongsTo(Programa, {
-    foreignKey: 'programa_id',
-    as: 'programa'
-});
-
-// areas.id < lineas_investigacion.area_id
-Area.hasMany(LineaInvestigacion, {
+// areas.id < programas.area_id
+Area.hasMany(Programa, {
     foreignKey: 'area_id',
-    as: 'lineas'
+    as: 'programas'
 });
-LineaInvestigacion.belongsTo(Area, {
+
+Programa.belongsTo(Area, {
     foreignKey: 'area_id',
     as: 'area'
 });
 
-// programas.id < articulos.programa_id
-Programa.hasMany(Articulo, {
-    foreignKey: 'programa_id'
+// programas.id < lineas_investigacion.programa_id
+Programa.hasMany(LineaInvestigacion, {
+    foreignKey: 'programa_id',
+    as: 'lineas'
 });
-Articulo.belongsTo(Programa, {
-    foreignKey: 'programa_id'
+LineaInvestigacion.belongsTo(Programa, {
+    foreignKey: 'programa_id',
+    as: 'programa'
 });
 
 // lineas_investigacion.id < articulos.linea_id
@@ -129,7 +121,8 @@ ArchivoArticulo.belongsTo(Articulo, {
 
 // articulos.id < evaluaciones.articulo_id
 Articulo.hasMany(Evaluacion, {
-    foreignKey: 'articulo_id'
+    foreignKey: 'articulo_id',
+    as: 'evaluaciones'
 });
 Evaluacion.belongsTo(Articulo, {
     foreignKey: 'articulo_id'

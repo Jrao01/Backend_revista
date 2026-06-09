@@ -7,16 +7,18 @@ const Area = db.define('areas', {
     primaryKey: true,
     autoIncrement: true
   },
-  programa_id: {
-    type: DataTypes.INTEGER,
-    allowNull: false
-  },
   nombre: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    unique: true
   },
   color_institucional: {
     type: DataTypes.STRING
+  },
+  status: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
   }
 }, {
   timestamps: false,

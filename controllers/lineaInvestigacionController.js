@@ -1,20 +1,20 @@
-import { LineaInvestigacion, Area } from '../models/index.js';
+import { LineaInvestigacion, Programa } from '../models/index.js';
 import { successResponse, errorResponse } from '../helpers/responseHelper.js';
 
 export const createLinea = async (req, res) => {
   try {
-    const { area_id, nombre, tipo } = req.body;
+    const { programa_id, nombre, status } = req.body;
 
-    const area = await Area.findByPk(area_id);
+    const programa = await Programa.findByPk(programa_id);
 
-    if (!area) {
-      return errorResponse(res, 'El área indicada no existe', 404);
+    if (!programa) {
+      return errorResponse(res, 'El programa indicado no existe', 404);
     }
 
     const linea = await LineaInvestigacion.create({
-      area_id,
+      programa_id,
       nombre,
-      tipo
+      status
     });
 
     return successResponse(res, 'Línea de investigación creada correctamente', linea, 201);
@@ -28,8 +28,8 @@ export const listLineas = async (req, res) => {
     const lineas = await LineaInvestigacion.findAll({
       include: [
         {
-          model: Area,
-          as: 'area'
+          model: Programa,
+          as: 'programa'
         }
       ],
       order: [['id', 'ASC']]
@@ -48,8 +48,8 @@ export const getLineaById = async (req, res) => {
     const linea = await LineaInvestigacion.findByPk(id, {
       include: [
         {
-          model: Area,
-          as: 'area'
+          model: Programa,
+          as: 'programa'
         }
       ]
     });
@@ -67,7 +67,7 @@ export const getLineaById = async (req, res) => {
 export const updateLinea = async (req, res) => {
   try {
     const { id } = req.params;
-    const { area_id, nombre, tipo } = req.body;
+    const { programa_id, nombre, status } = req.body;
 
     const linea = await LineaInvestigacion.findByPk(id);
 
@@ -75,19 +75,23 @@ export const updateLinea = async (req, res) => {
       return errorResponse(res, 'Línea de investigación no encontrada', 404);
     }
 
-    if (area_id) {
-      const area = await Area.findByPk(area_id);
-
-      if (!area) {
-        return errorResponse(res, 'El área indicada no existe', 404);
+    if (programa_id) {
+      const programa = await Programa.findByPk(programa_id);
+      if (!programa) {
+        return errorResponse(res, 'El programa indicado no existe', 404);
       }
     }
 
-    await linea.update({
-      area_id,
-      nombre,
-      tipo
-    });
+    // Cannot activate a line if its parent program is disabled
+    if (status === true) {
+      const progId = programa_id || linea.programa_id;
+      const programa = await Programa.findByPk(progId);
+      if (programa && programa.status === false) {
+        return errorResponse(res, 'No se puede activar una línea cuyo programa está deshabilitado', 400);
+      }
+    }
+
+    await linea.update({ programa_id, nombre, status });
 
     return successResponse(res, 'Línea de investigación actualizada correctamente', linea);
   } catch (error) {

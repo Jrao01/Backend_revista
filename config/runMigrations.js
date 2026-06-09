@@ -15,6 +15,11 @@ const MIGRATION_FILES = [
     'create-volumenes.js',
     'update-numeros-revista-volumen-id.js',
     'add-numero-revista-id-to-articulos.js',
+    'swap-area-programa-linea-fks.js',
+    'drop-tipo-from-lineas.js',
+    'add-status-to-hierarchy.js',
+    'add-portada-to-revistas.js',
+    'drop-programa-id-from-articulos.js',
     'add-visitas-descargas-to-articulos.js'
 ];
 

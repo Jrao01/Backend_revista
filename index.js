@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
 import fs from "fs";
+import multer from "multer";
 import db from "./config/conexion.js";
 import { runPendingMigrations } from "./config/runMigrations.js";
 import "./models/index.js";
@@ -16,6 +17,12 @@ import lineasRoutes from "./routes/lineasRoutes.js";
 import revistaRoutes from "./routes/revistaRoutes.js";
 import volumenesRoutes from "./routes/volumenesRoutes.js";
 import editorRoutes from './routes/editorRoutes.js';
+import evaluacionRoutes from './routes/evaluacionRoutes.js';
+import autoresRoutes from './routes/autoresRoutes.js';
+import downloadRoutes from './routes/downloadRoutes.js';
+import statsRoutes from './routes/statsRoutes.js';
+import statsContentRoutes from './routes/statsContentRoutes.js';
+import galeradaRoutes from './routes/galeradaRoutes.js';
 
 // Configurar variables de entorno
 dotenv.config();
@@ -51,12 +58,17 @@ app.use("/api/lineas", lineasRoutes);
 app.use("/api/revistas", revistaRoutes);
 app.use("/api/volumenes", volumenesRoutes);
 app.use('/api/editor', editorRoutes);
+app.use('/api/evaluaciones', evaluacionRoutes);
+app.use('/api/autores', autoresRoutes);
+app.use('/api/descargar', downloadRoutes);
+app.use('/api/stats', statsRoutes);
+app.use('/api/stats-content', statsContentRoutes);
+app.use('/api/galerada', galeradaRoutes);
 
-// Error handling para JSON mal formado
+// Error handling para JSON mal formado y Multer
 app.use((err, req, res, next) => {
     if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
         console.error("JSON parse error:", err.message);
-
         return res.status(400).json({
             ok: false,
             message: "JSON inválido en el cuerpo de la solicitud",
@@ -64,7 +76,22 @@ app.use((err, req, res, next) => {
         });
     }
 
-    next();
+    if (err instanceof multer.MulterError) {
+        console.error("Multer error:", err.message);
+        return res.status(400).json({
+            ok: false,
+            message: "Error al subir archivo: " + err.message
+        });
+    }
+
+    if (err.message && err.message.includes('Formato de archivo no válido')) {
+        return res.status(400).json({
+            ok: false,
+            message: err.message
+        });
+    }
+
+    next(err);
 });
 
 // Función de arranque del servidor

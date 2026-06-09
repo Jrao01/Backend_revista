@@ -5,7 +5,9 @@ import {
     actualizarUsuario,
     crearUsuario,
     loginUsuario,
-    crearUsuarioAdmin
+    crearUsuarioAdmin,
+    getMyProfile,
+    uploadCv
 } from '../controllers/usersControllers.js';
 import checkAuth from '../middlewares/authMiddleware.js';
 import upload from '../middlewares/uploadMiddleware.js';
@@ -17,7 +19,9 @@ router.post('/login', loginUsuario);
 router.post('/registro', crearUsuario);
 
 router.get('/todos', checkAuth, obtenerUsuarios);
+router.get('/profile', checkAuth, getMyProfile);
 router.post('/crear-admin', checkAuth, upload.single('cv'), crearUsuarioAdmin);
+router.put('/profile/cv', checkAuth, upload.single('cv'), uploadCv);
 
 router.get('/', (req, res) => {
     res.json("activo");

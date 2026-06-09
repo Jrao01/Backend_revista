@@ -3,18 +3,12 @@ import { successResponse, errorResponse } from '../helpers/responseHelper.js';
 
 export const createArea = async (req, res) => {
   try {
-    const { programa_id, nombre, color_institucional } = req.body;
-
-    const programa = await Programa.findByPk(programa_id);
-
-    if (!programa) {
-      return errorResponse(res, 'El programa indicado no existe', 404);
-    }
+    const { nombre, color_institucional, status } = req.body;
 
     const area = await Area.create({
-      programa_id,
       nombre,
-      color_institucional
+      color_institucional,
+      status
     });
 
     return successResponse(res, 'Área creada correctamente', area, 201);
@@ -29,11 +23,7 @@ export const listAreas = async (req, res) => {
       include: [
         {
           model: Programa,
-          as: 'programa'
-        },
-        {
-          model: LineaInvestigacion,
-          as: 'lineas'
+          as: 'programas'
         }
       ],
       order: [['id', 'ASC']]
@@ -53,11 +43,7 @@ export const getAreaById = async (req, res) => {
       include: [
         {
           model: Programa,
-          as: 'programa'
-        },
-        {
-          model: LineaInvestigacion,
-          as: 'lineas'
+          as: 'programas'
         }
       ]
     });
@@ -75,7 +61,7 @@ export const getAreaById = async (req, res) => {
 export const updateArea = async (req, res) => {
   try {
     const { id } = req.params;
-    const { programa_id, nombre, color_institucional } = req.body;
+    const { nombre, color_institucional, status } = req.body;
 
     const area = await Area.findByPk(id);
 
@@ -83,19 +69,20 @@ export const updateArea = async (req, res) => {
       return errorResponse(res, 'Área no encontrada', 404);
     }
 
-    if (programa_id) {
-      const programa = await Programa.findByPk(programa_id);
+    await area.update({
+      nombre,
+      color_institucional,
+      status
+    });
 
-      if (!programa) {
-        return errorResponse(res, 'El programa indicado no existe', 404);
+    // Cascade: if area is disabled, disable all its programs and their lines
+    if (status === false) {
+      const programas = await Programa.findAll({ where: { area_id: id } });
+      for (const prog of programas) {
+        await prog.update({ status: false });
+        await LineaInvestigacion.update({ status: false }, { where: { programa_id: prog.id } });
       }
     }
-
-    await area.update({
-      programa_id,
-      nombre,
-      color_institucional
-    });
 
     return successResponse(res, 'Área actualizada correctamente', area);
   } catch (error) {
@@ -107,10 +94,16 @@ export const deleteArea = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const area = await Area.findByPk(id);
+    const area = await Area.findByPk(id, {
+      include: [{ model: Programa, as: 'programas' }]
+    });
 
     if (!area) {
       return errorResponse(res, 'Área no encontrada', 404);
+    }
+
+    if (area.programas && area.programas.length > 0) {
+      return errorResponse(res, 'No se puede eliminar el área porque tiene programas asociados', 400);
     }
 
     await area.destroy();

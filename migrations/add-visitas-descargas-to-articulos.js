@@ -6,16 +6,16 @@ export async function up(queryInterface, Sequelize, helpers = {}) {
 
     const table = await queryInterface.describeTable('articulos');
 
-    if (!table.visitas) {
-        await queryInterface.addColumn('articulos', 'visitas', {
+    if (!table.views) {
+        await queryInterface.addColumn('articulos', 'views', {
             type: Sequelize.INTEGER,
             allowNull: false,
             defaultValue: 0
         });
     }
 
-    if (!table.descargas) {
-        await queryInterface.addColumn('articulos', 'descargas', {
+    if (!table.downloads) {
+        await queryInterface.addColumn('articulos', 'downloads', {
             type: Sequelize.INTEGER,
             allowNull: false,
             defaultValue: 0
@@ -31,11 +31,11 @@ export async function down(queryInterface, Sequelize, helpers = {}) {
 
     const table = await queryInterface.describeTable('articulos');
 
-    if (table.visitas) {
-        await queryInterface.removeColumn('articulos', 'visitas');
+    if (table.views) {
+        await queryInterface.removeColumn('articulos', 'views');
     }
 
-    if (table.descargas) {
-        await queryInterface.removeColumn('articulos', 'descargas');
+    if (table.downloads) {
+        await queryInterface.removeColumn('articulos', 'downloads');
     }
 }

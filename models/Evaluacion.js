@@ -26,6 +26,10 @@ const Evaluacion = db.define('evaluaciones', {
   },
   fecha_evaluacion: {
     type: DataTypes.DATE
+  },
+  ronda: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1
   }
 }, {
   timestamps: false,

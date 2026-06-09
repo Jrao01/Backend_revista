@@ -1,12 +1,45 @@
+# Dependencias
 node_modules/
+
+# Variables de entorno
 .env
-requerimientos.txt
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+
+# Archivos subidos por usuarios (manuscritos, imágenes, CVs)
+# Conservamos la estructura de carpetas pero no los archivos reales
 uploads/*
-# SQLite local (datos de tu máquina, no van al repo)
+!uploads/.gitkeep
+
+# Archivos de galerada generados automáticamente
+# (PDFs, HTMLs, JATS, HTML5 de artículos y números)
+uploads/articulos/**/*.pdf
+uploads/articulos/**/*.html
+uploads/articulos/**/*.xml
+uploads/numeros/**/*.pdf
+
+# Base de datos SQLite local (datos de tu máquina, no van al repo)
 config/*.sqlite
 config/*.sqlite-journal
 config/*.sqlite-wal
 config/*.sqlite-shm
-database.dev.sqlite
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# Archivos temporales y de sistema
+Thumbs.db
+.DS_Store
+*.tmp
+*.temp
+
+# Documentación personal del proyecto (no compartir)
 preguntas.txt
+requerimientos.txt
 requerimientos.json

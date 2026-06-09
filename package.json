@@ -15,6 +15,9 @@
         "db:migrate": "node scripts/db-migrate.js",
         "db:reset": "node tests/scripts/reset-db.js",
         "seed:asignacion": "node tests/scripts/seed-asignacion.js",
+        "seed:admin": "node tests/scripts/seed-admin.js",
+        "seed:all": "node tests/scripts/seed-all.js",
+        "seed": "node scripts/seed.js",
         "test:asignacion": "node tests/scripts/test-asignacion-api.js"
     },
     "dependencies": {
@@ -30,6 +33,7 @@
         "morgan": "^1.10.1",
         "multer": "^2.1.1",
         "nodemailer": "^8.0.6",
+        "puppeteer": "^25.1.0",
         "sequelize": "^6.37.8",
         "sqlite3": "^6.0.1"
     },
