@@ -38,6 +38,12 @@ app.use(express.urlencoded({
     extended: true
 }));
 
+// Normalizar req.body para evitar crashes en Express 5 (puede ser undefined sin Content-Type adecuado)
+app.use((req, res, next) => {
+    if (!req.body) req.body = {};
+    next();
+});
+
 // Crear carpeta uploads si no existe
 const uploadsDir = "./uploads";
 

@@ -52,7 +52,7 @@ router.get('/:id/admin', checkAuth, checkRol(['administrador', 'editor']), getAr
 router.get('/:id', getArticleById);
 
 // Actualizar los datos de un artículo
-router.put('/:id', checkAuth, updateArticle);
+router.put('/:id', checkAuth, upload.none(), updateArticle);
 
 // Listar todos los artículos
 router.get('/', checkAuth, getArticulos);
