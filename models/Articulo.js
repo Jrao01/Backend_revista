@@ -76,6 +76,16 @@ const Articulo = db.define('articulos', {
     },
     fecha_publicacion: {
         type: DataTypes.DATEONLY
+    },
+    visitas: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+    },
+    descargas: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0
     }
 }, {
     timestamps: false,

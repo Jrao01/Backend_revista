@@ -14,7 +14,8 @@ const MIGRATION_FILES = [
     'create-lineas-investigracion.js',
     'create-volumenes.js',
     'update-numeros-revista-volumen-id.js',
-    'add-numero-revista-id-to-articulos.js'
+    'add-numero-revista-id-to-articulos.js',
+    'add-visitas-descargas-to-articulos.js'
 ];
 
 const Meta = db.define(

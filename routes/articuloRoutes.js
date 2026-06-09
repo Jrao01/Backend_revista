@@ -27,7 +27,7 @@ router.put('/:id/asignar', checkAuth, assignArticle);
 router.get('/:id', checkAuth, getArticleById);
 
 // Actualizar los datos de un artículo
-router.put('/:id', checkAuth, updateArticle);
+router.put('/:id', checkAuth, upload.single('img'), updateArticle);
 
 // Listar todos los artículos
 router.get('/', checkAuth, getArticulos);

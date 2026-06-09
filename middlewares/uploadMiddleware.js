@@ -15,14 +15,14 @@ const storage = multer.diskStorage({
 
 // Filtro para aceptar solo ciertos tipos de archivos
 const fileFilter = (req, file, cb) => {
-    const filetypes = /pdf|doc|docx/;
+    const filetypes = /pdf|doc|docx|jpg|jpeg|png|gif|webp/;
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = filetypes.test(file.mimetype);
+    const mimetype = filetypes.test(file.mimetype) || file.mimetype.startsWith('image/');
 
     if (mimetype && extname) {
         return cb(null, true);
     } else {
-        cb(new Error('Formato de archivo no válido. Solo se permiten PDF o documentos de Word (doc, docx)'));
+        cb(new Error('Formato de archivo no válido. Solo se permiten PDF, documentos de Word (doc, docx) o imágenes (jpg, jpeg, png, gif, webp)'));
     }
 };
 

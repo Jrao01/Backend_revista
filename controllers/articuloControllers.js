@@ -2,7 +2,9 @@ import {
     Articulo,
     ArchivoArticulo,
     NumeroRevista,
-    Volumen
+    Volumen,
+    Usuario,
+    AutorSecundario
 } from "../models/index.js";
 
 // Registrar un artículo nuevo junto con su archivo principal
@@ -153,6 +155,16 @@ export const getArticleById = async (req, res) => {
                     model: NumeroRevista,
                     as: 'numero_revista',
                     include: [{ model: Volumen, as: 'volumen' }]
+                },
+                {
+                    model: Usuario,
+                    as: 'autor_principal'
+                },
+                {
+                    model: AutorSecundario,
+                    include: [{
+                        model: Usuario
+                    }]
                 }
             ]
         });
@@ -185,13 +197,21 @@ export const updateArticle = async (req, res) => {
             resumen_en,
             palabras_clave,
             programa_id,
-            linea_id
+            linea_id,
+            img
         } = req.body;
 
         const articulo = await Articulo.findByPk(id);
         if (!articulo) {
             return res.status(404).json({
                 message: "Artículo no encontrado"
+            });
+        }
+
+        // Restricción: Solo se puede editar si el artículo está en estado 'por_corregir'
+        if (articulo.status !== 'por_corregir') {
+            return res.status(400).json({
+                message: "Solo se puede editar el artículo si se encuentra en estado 'por_corregir'"
             });
         }
 
@@ -202,6 +222,13 @@ export const updateArticle = async (req, res) => {
         if (palabras_clave !== undefined) articulo.palabras_clave = palabras_clave;
         if (programa_id) articulo.programa_id = programa_id;
         if (linea_id) articulo.linea_id = linea_id;
+
+        // Soporte para subir o actualizar la imagen de portada/cover
+        if (req.file) {
+            articulo.img = req.file.path;
+        } else if (img !== undefined) {
+            articulo.img = img;
+        }
 
         await articulo.save();
 
@@ -220,7 +247,26 @@ export const updateArticle = async (req, res) => {
 
 export const getArticulos = async (req, res) => {
     try {
-        const articulos = await Articulo.findAll();
+        const articulos = await Articulo.findAll({
+            include: [
+                { model: ArchivoArticulo },
+                {
+                    model: NumeroRevista,
+                    as: 'numero_revista',
+                    include: [{ model: Volumen, as: 'volumen' }]
+                },
+                {
+                    model: Usuario,
+                    as: 'autor_principal'
+                },
+                {
+                    model: AutorSecundario,
+                    include: [{
+                        model: Usuario
+                    }]
+                }
+            ]
+        });
         res.json(articulos);
     } catch (error) {
         console.log(error);
@@ -233,16 +279,28 @@ export const getArticulos = async (req, res) => {
 
 export const getArticulosAprobados = async (req, res) => {
     try {
-        const { revistaId } = req.query;
+        const { revistaId } = req.query || {};
         const whereClause = { status: 'aprobado' };
         if (revistaId) {
             whereClause.revista_id = parseInt(revistaId);
         }
         const articulos = await Articulo.findAll({
             where: whereClause,
-            include: [{
-                model: ArchivoArticulo
-            }]
+            include: [
+                {
+                    model: ArchivoArticulo
+                },
+                {
+                    model: Usuario,
+                    as: 'autor_principal'
+                },
+                {
+                    model: AutorSecundario,
+                    include: [{
+                        model: Usuario
+                    }]
+                }
+            ]
         });
         res.json(articulos);
     } catch (error) {
