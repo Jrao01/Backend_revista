@@ -38,7 +38,15 @@ jest.unstable_mockModule('../../controllers/articuloControllers.js', () => ({
     updateArticle: jest.fn(),
     getArticulos: jest.fn(),
     getArticulosAprobados: jest.fn(),
-    assignArticle: jest.fn()
+    getArticulosPublicados: jest.fn(),
+    assignArticle: jest.fn(),
+    getRelatedArticles: jest.fn(),
+    getArticleBySlug: jest.fn(),
+    getMyManuscripts: jest.fn(),
+    getMyArticleEvaluations: jest.fn(),
+    rechazarArticulo: jest.fn(),
+    reUploadFiles: jest.fn(),
+    getArticleAdminDetail: jest.fn()
 }));
 
 jest.unstable_mockModule('../../middlewares/authMiddleware.js', () => ({

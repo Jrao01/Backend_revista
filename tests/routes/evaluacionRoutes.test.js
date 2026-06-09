@@ -52,7 +52,7 @@ jest.unstable_mockModule('../../middlewares/rolMiddleware.js', () => ({
 }));
 
 jest.unstable_mockModule('../../middlewares/validarCampos.js', () => ({
-  validarCampos: (req, res, next) => next()
+  default: (req, res, next) => next()
 }));
 
 const evaluacionRoutes = (await import('../../routes/evaluacionRoutes.js')).default;

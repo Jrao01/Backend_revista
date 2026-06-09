@@ -44,24 +44,26 @@ async function seedAsignacion() {
         }
     });
 
-    const [programa] = await Programa.findOrCreate({
-        where: { nombre: 'Programa Seed Dixon' },
-        defaults: { nombre: 'Programa Seed Dixon' }
-    });
-
     const [area] = await Area.findOrCreate({
-        where: { nombre: 'Área Seed Dixon', programa_id: programa.id },
+        where: { nombre: 'Área Seed Dixon' },
         defaults: {
-            programa_id: programa.id,
             nombre: 'Área Seed Dixon',
             color_institucional: '#0057B8'
         }
     });
 
-    const [linea] = await LineaInvestigacion.findOrCreate({
-        where: { nombre: 'Línea Seed Dixon', area_id: area.id },
+    const [programa] = await Programa.findOrCreate({
+        where: { nombre: 'Programa Seed Dixon', area_id: area.id },
         defaults: {
             area_id: area.id,
+            nombre: 'Programa Seed Dixon'
+        }
+    });
+
+    const [linea] = await LineaInvestigacion.findOrCreate({
+        where: { nombre: 'Línea Seed Dixon', programa_id: programa.id },
+        defaults: {
+            programa_id: programa.id,
             nombre: 'Línea Seed Dixon'
         }
     });
@@ -107,7 +109,6 @@ async function seedAsignacion() {
     if (!articulo) {
         articulo = await Articulo.create({
             revista_id: revista.id,
-            programa_id: programa.id,
             linea_id: linea.id,
             autor_principal_id: editor.id,
             titulo_es: SEED.tituloArticulo,

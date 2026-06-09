@@ -17,6 +17,7 @@ describe('Controlador de Evaluaciones — CRUD y Consenso', () => {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis()
     };
+    jest.spyOn(Evaluacion, 'max').mockResolvedValue(1);
     jest.clearAllMocks();
   });
 
