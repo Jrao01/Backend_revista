@@ -30,6 +30,31 @@ function writeContentFile(dir, filename, label) {
   return fullPath;
 }
 
+function generatePlaceholderSVG(title) {
+  const hash = title.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const hue1 = hash % 360;
+  const hue2 = (hash * 7) % 360;
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="hsl(${hue1},60%,50%)"/>
+      <stop offset="100%" stop-color="hsl(${hue2},60%,40%)"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#g)"/>
+  <text x="400" y="225" dominant-baseline="middle" text-anchor="middle" fill="rgba(255,255,255,0.9)" font-family="sans-serif" font-size="28" font-weight="600">${title.slice(0, 40)}</text>
+</svg>`;
+  return svg;
+}
+
+function writeImageFile(imgPath, title) {
+  const dir = path.dirname(imgPath);
+  ensureDir(dir);
+  fs.writeFileSync(imgPath, generatePlaceholderSVG(title), 'utf-8');
+  return imgPath;
+}
+
 async function seed() {
   console.log('Limpiando datos existentes...');
   await Evaluacion.destroy({ where: {} });
@@ -78,9 +103,24 @@ async function seed() {
   ]);
 
   console.log('Creando revistas, volúmenes y números...');
+
+  // Asegurar imagen de portada por defecto
+  const revDir = path.join(__dirname, '..', 'uploads', 'revistas');
+  ensureDir(revDir);
+  const revCoverPath = path.join(revDir, 'cover_default.jpg');
+  if (!fs.existsSync(revCoverPath)) {
+    // Crear un SVG placeholder como portada de revista
+    const revSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400">
+  <rect width="1200" height="400" fill="#1a1a2e"/>
+  <text x="600" y="200" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-size="42" font-weight="700">REVISTA CIENTÍFICA</text>
+</svg>`;
+    fs.writeFileSync(revCoverPath.replace('.jpg', '.svg'), revSvg, 'utf-8');
+  }
+
   const revistas = await Revista.bulkCreate([
-    { nombre: 'Revista Científica UNERG', issn: '2026-0001', periodicidad: 'semestral', descripcion: 'Publicación científica de la UNERG' },
-    { nombre: 'Ciencia e Investigación', issn: '2026-0002', periodicidad: 'anual', descripcion: 'Revista multidisciplinaria' },
+    { nombre: 'Revista Científica UNERG', issn: '2026-0001', periodicidad: 'semestral', descripcion: 'Publicación científica de la UNERG', portada: '/uploads/revistas/cover_default.jpg' },
+    { nombre: 'Ciencia e Investigación', issn: '2026-0002', periodicidad: 'anual', descripcion: 'Revista multidisciplinaria', portada: '/uploads/revistas/cover_default.jpg' },
   ]);
 
   for (const rev of revistas) {
@@ -143,6 +183,13 @@ async function seed() {
   for (const a of createdArticles) {
     const artDir = path.join(__dirname, '..', 'uploads', 'articulos', String(a.db.id));
     ensureDir(artDir);
+
+    // imagen de portada
+    if (a.img) {
+      const imgRelative = a.img.startsWith('/') ? a.img.slice(1) : a.img;
+      const imgPath = path.join(__dirname, '..', imgRelative);
+      writeImageFile(imgPath, a.titulo_es);
+    }
 
     // manuscrito_original
     const moPath = writeContentFile(artDir, 'manuscrito_original.txt', 'manuscrito original');
